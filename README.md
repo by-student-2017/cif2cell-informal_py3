@@ -84,11 +84,11 @@ The distribution includes:
 ## INSTALLATION INSTRUCTIONS
 
 Prerequisites: The program requires Python 3.10 or higher and the
-  PyCIFRW python package (which will be installed
-  automatically if not present, see below for manual
-  installation instructions). Note however that the output
-  may be slightly different (but formally equivalent)
-  with Python 3.10 than with later versions.
+               PyCIFRW python package (which will be installed
+               automatically if not present, see below for manual
+   	       installation instructions). Note however that the output
+               may be slightly different (but formally equivalent)
+	       with Python 3.10 than with later versions.
 
 To install the program in your systems standard location, simply type:
 
