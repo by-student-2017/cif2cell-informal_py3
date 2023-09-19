@@ -77,18 +77,18 @@ The distribution includes:
   as well as the crystal structures of the full periodic table 
   from COD, the Crystallography Open Database <http://www.crystallography.net>
   and also a few from ICSD (with permission).
-* The file PyCifRW-3.3.tar.gz, containing the PyCifRW package needed for
+* The file PyCifRW-X.X.tar.gz, containing the PyCifRW package needed for
   parsing CIF files.
 
 
 ## INSTALLATION INSTRUCTIONS
 
 Prerequisites: The program requires Python 3.10 or higher and the
-               PyCIFRW python package (which will be installed
-               automatically if not present, see below for manual
-   	       installation instructions). Note however that the output
-               may be slightly different (but formally equivalent)
-	       with Python 3.10 than with later versions.
+  PyCIFRW python package (which will be installed
+  automatically if not present, see below for manual
+  installation instructions). Note however that the output
+  may be slightly different (but formally equivalent)
+  with Python 3.10 than with later versions.
 
 To install the program in your systems standard location, simply type:
 
