@@ -169,7 +169,7 @@ Details of cif2cell-informal
 1. sudo apt update
 2. sudo apt -y install python3 python3-setuptools python3-dev
 3. git clone https://github.com/by-student-2017/cif2cell-informal_py3.git
-4. cd cif2cell-informal
+4. cd cif2cell-informal_py3
 5. tar zxvf PyCifRW-4.4.5.tar.gz
 6. cd PyCifRW-4.4.5
 7. sudo python3 setup.py install
@@ -182,7 +182,7 @@ Details of cif2cell-informal
 	!apt install -y git python python-setuptools python-dev gcc
 	%cd /content
 	!git clone https://github.com/by-student-2017/cif2cell-informal_py3.git
-	%cd cif2cell-informal
+	%cd cif2cell-informal_py3
 	!tar zxvf PyCifRW-4.4.5.tar.gz
 	%cd PyCifRW-4.4.5
 	!python3 setup.py install
