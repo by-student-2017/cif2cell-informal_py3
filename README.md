@@ -263,7 +263,7 @@ Details of cif2cell-informal
 	cif2cell -p pwscf --pwscf-pseudo-PSLibrary-libdr='/home/username/PSLibrary' --pwscf-bin-dir=$HOME/q-e-qe-6.3/bin --setup-all --k-resolution=0.48 --pwscf-brav --pwscf-spin=no --run-calc --pwscf-run-type=scf -f *.cif
 
 
-	export PWscf_PAWLIB = $HOME/PSLibrary
+	export PWscf_PAWLIB=$HOME/PSLibrary
 
 
 	Number of k point * lattice constant = 10 - 13 Angstrom for SCF calculation.  This range is from --k-resolution=2*3.1415/13=0.48 to --k-resolution=2*3.1415/10=0.62.  The default setting is --k-resolution=0.2. This setting is enough to calculate DOS. Hence, nk(DOS) = nk(SCF)*2. nk = number of k point.  This code set automatically [--k-resolution value / 2] for DOS calculation.
