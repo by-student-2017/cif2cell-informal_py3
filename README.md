@@ -5,6 +5,7 @@ Copyright 2010, Torbjorn Bjorkman
 * This is test version
 * Use 2to3 and expand tools
 * Modified uctools.py (for gcd and L)
+* "*.bak" are old version (python2)
 
 * cif2cell support cif file
 * You can get VESTA old version from this URL: http://jp-minerals.org/vesta/archives/ 
