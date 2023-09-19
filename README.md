@@ -2,7 +2,11 @@ Copyright 2010, Torbjorn Bjorkman
 
 ## Attention in cif2cell-informal
 
-* cif2cell support cif file (from VESTA version 3.1.0 - 3.1.7 in 2013-2014.)
+* This is test version
+* Use 2to3 and expand tools
+* Modified uctools.py (for gcd and L)
+
+* cif2cell support cif file
 * You can get VESTA old version from this URL: http://jp-minerals.org/vesta/archives/ 
 * expert user recommend to change "_symmetry_" part on cif file. new version cif remove "_symmetry_" and add "alt."
 
@@ -78,12 +82,12 @@ The distribution includes:
 
 ## INSTALLATION INSTRUCTIONS
 
-Prerequisites: The program requires Python 2.4 or higher and the
+Prerequisites: The program requires Python 3.10 or higher and the
                PyCIFRW python package (which will be installed
                automatically if not present, see below for manual
    	       installation instructions). Note however that the output
                may be slightly different (but formally equivalent)
-	       with Python 2.4 than with later versions.
+	       with Python 3.10 than with later versions.
 
 To install the program in your systems standard location, simply type:
 

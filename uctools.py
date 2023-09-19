@@ -733,7 +733,6 @@ class CellData(GeometryObject):
                         self.ChemicalComposition[k] = int(v)
         if not self.alloy:
             L = list(self.ChemicalComposition.values())
-            print(L)
             divisor = reduce(gcd,L)
             for k,v in self.ChemicalComposition.items():
                 self.ChemicalComposition[k] = v/divisor
