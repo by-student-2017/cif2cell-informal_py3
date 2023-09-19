@@ -418,6 +418,10 @@ Details of cif2cell-informal
 ## Version: comments
 
 
+* 1.2.47+PyCifRW-4.4.5: Python 3.10 version (test version)
+	could use new verion cif (e.g. new version vesta in 2018-2019)
+
+
 * 1.2.39+PyCifRW-4.4: add FDMNES option.
 	could use new verion cif (e.g. new version vesta in 2018-2019)
 
