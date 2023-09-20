@@ -195,7 +195,7 @@ progspec.add_option("--pwscf-space-group",dest="space_group",help="output templa
 progspec.add_option("--pwscf-fix-all-pos",dest="fix_all_pos",help="output template (input file) for fix all position setting (default: no use)", action="store_true")
 progspec.add_option("--pwscf-move-atomic-species",dest="move_atom_sp_list",help="output template (input file) for move atom species setting (default: no use)", metavar='"O","Ti"')
 progspec.add_option("--pwscf-fix-atomic-species",dest="fix_atom_sp_list",help="output template (input file) for move atom species setting (default: no use)", metavar='"O","Ti"')
-progspec.add_option("--pwscf-bin-dir",dest="pwscf_bin_dir",help="bin adress for PWscf code (default: $HOME/q-e-qe-*/bin)", metavar="$HOME/q-e-qe-6.3/bin")
+progspec.add_option("--pwscf-bin-dir",dest="pwscf_bin_dir",help="bin adress for PWscf code (default: $HOME/qe-*/bin)", metavar="$HOME/qe-7.2/bin")
 # RSPt
 progspec.add_option("--rspt-new", dest="newsymt", help="Generate a symt.inp file in the new format.", action="store_true")
 progspec.add_option("--rspt-spinpol", dest="rsptspinpol", help="Generate new format symt.inp file with spin polarization.", action="store_true")
@@ -2136,7 +2136,7 @@ if outputprogram == 'pwscf':
         if options.pwscf_bin_dir:
             pwscfinput.pwscf_bin_dir = options.pwscf_bin_dir
         else:
-            pwscfinput.pwscf_bin_dir = "$HOME/q-e-qe-*/bin"
+            pwscfinput.pwscf_bin_dir = "$HOME/qe-*/bin"
         print("")
         print("calculation command:")
         run_threads = "export OMP_NUM_THREADS=1"
