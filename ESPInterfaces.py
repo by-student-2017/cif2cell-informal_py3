@@ -2309,13 +2309,12 @@ class PWSCF_Input_File(GeometryOutputFile):
                         continue
                     break
                 elif self.pseudotype == "PSEUDO":
-                    filestring += "  %2s"%(sp.rjust(width))
-                    try:
-                        filestring += ("  %8.5f"%(ed.elementweight[sp])).rjust(11)
-                    except:
-                        filestring += "   ???".rjust(11)
-                    self.pseudostring = "_PSEUDO"
-                    filestring += "  %2s%s\n"%(sp.rjust(width),self.pseudostring)
+                    potname = sp.lower()+"_PSEUDO"
+                    potfile = self.dir+"/"+potname
+                    if os.path.exists(potfile):
+                        potlist.append(potfile)
+                        potnamelist.append(potfile)
+                        break
             #
             ATOMIC_SPECIES_string += "  %2s"%(sp.rjust(width))
             try:
