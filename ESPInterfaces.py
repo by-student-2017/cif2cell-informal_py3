@@ -2308,6 +2308,14 @@ class PWSCF_Input_File(GeometryOutputFile):
                     else:
                         continue
                     break
+                elif self.pseudotype == "PSEUDO":
+                    filestring += "  %2s"%(sp.rjust(width))
+                    try:
+                        filestring += ("  %8.5f"%(ed.elementweight[sp])).rjust(11)
+                    except:
+                        filestring += "   ???".rjust(11)
+                    self.pseudostring = "_PSEUDO"
+                    filestring += "  %2s%s\n"%(sp.rjust(width),self.pseudostring)
             #
             ATOMIC_SPECIES_string += "  %2s"%(sp.rjust(width))
             try:
