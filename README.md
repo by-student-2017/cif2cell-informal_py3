@@ -10,7 +10,7 @@ Copyright 2010, Torbjorn Bjorkman
 * cif2cell support cif file
 * You can get VESTA old version from this URL: http://jp-minerals.org/vesta/archives/ 
 * expert user recommend to change "_symmetry_" part on cif file. new version cif remove "_symmetry_" and add "alt."
-* Currently, "_space_group_name_Hall" is not written in the VESTA cif file. You need to add "_space_group_name_Hall" for "reduce" to work. It is described in "material project" and "https://cci.lbl.gov/sginfo/hall_symbols.html".
+* Currently, "_space_group_name_Hall" is not written in the VESTA cif file. You need to add "_space_group_name_Hall" for "reduce" to work. It is described in "Materials Project" and "https://cci.lbl.gov/sginfo/hall_symbols.html".
 
 ## Python 3.10
 
