@@ -416,6 +416,13 @@ Details of cif2cell-informal
 	export PWscf_PAWLIB = $HOME/PSLibrary
 
 
+## Acknowledgment ######################################
+- This project (modified version) is/was partially supported by the following :
+  + meguREnergy Co., Ltd.
+  + ATSUMITEC Co., Ltd.
+  + RIKEN
+
+
 ## Version: comments
 
 
