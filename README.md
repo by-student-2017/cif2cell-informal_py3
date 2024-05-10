@@ -242,6 +242,12 @@ Details of cif2cell-informal
 	cif2cell -p lammps --no-reduce -f *.cif
 
 
+*	MOPAC
+
+
+	cif2cell -p mopac --setup-all --mopac-type=PM6 --mopac-charge=0 --mopac-run-type="opt+cis" -f *.cif
+
+
 *	DFTB+
 
 
