@@ -160,14 +160,14 @@ progspec.add_option("--emto-hard-sphere-radii",dest="hardsphereradii",help="Set 
 progspec.add_option("--fhi-aims-cartesian", dest="aimscartesian", help="Store the coordinates for FHI-AIMS in cartesian format.", action="store_true")
 # MOPAC
 progspec.add_option("--mopac-first-line", dest="mopacfirstline", help="String to be used for the first line (the run commands) of the MOPAC input.",metavar='"PM7 CHARGE=0"')
-progspec.add_option("--mopac-second-line", dest="mopacsecondline", help="String to be used for the second line (documentation) of the MOPAC input.",metavar='"Title"')
-progspec.add_option("--mopac-third-line", dest="mopacthirdline", help="String to be used for the third line (documentation) of the MOPAC input.",metavar='"structure optimization"')
+progspec.add_option("--mopac-second-line", dest="mopacsecondline", help="String to be used for the second line (documentation) of the MOPAC input.",metavar='"# Title"')
+progspec.add_option("--mopac-third-line", dest="mopacthirdline", help="String to be used for the third line (documentation) of the MOPAC input.",metavar='"# The structure optimization"')
 progspec.add_option("--mopac-end-line", dest="mopacendline", help="String to be used for the end line (documentation) of the MOPAC input.",metavar='""')
 progspec.add_option("--mopac-freeze-structure", dest="mopacfreeze", help="If set to 'T' then add a 0 after each coordinate (freezing the structure), if set to 'F' then add a 1 (allowing everything to relax).",metavar='T/F')
 progspec.add_option("--mopac-run-type",dest="mopacruntype",help="output template (input file) for every run type. e.g. opt, noopt, 1scf, mozyme, opt+cis, cis, cisd, cas, sparkle, sparkle+spin, sparkle+pKa, polar, pulay, esp, vectors, mep, saddle, ts, force, irc (default: opt)", metavar="opt")
-progspec.add_option("--mopac-charge",dest="mopaccharge",help="charge (default: 0), CHARGE=3 Triplet", metavar="0")
+progspec.add_option("--mopac-charge",dest="mopaccharge",help="charge (default: 0), e.g., CHARGE=0 SINGLET, CHARGE=3 Triplet, CHARGE=-3 Singlet", metavar="0")
 progspec.add_option("--mopac-eps",dest="mopaceps",help="eps (default: 1.0) (Information; water:78.4, methanol:32.63, toluene:2.379, ethylene glycol:37.7, ammonia:16.9, vacuum:1.0)", metavar="0")
-progspec.add_option("--mopac-type",dest="mopactype",help="The semiempirical Hamiltonians: AM1, PM3, RM1, PM6, PM6-D3H4, PM7 or PM7-TS (default: PM7)",metavar="PM7")
+progspec.add_option("--mopac-type",dest="mopactype",help="The semiempirical Hamiltonians: PM7, PM6-D3H4, PM6, AM1, PM3, RM1 or PM7-TS (default: PM7)",metavar="PM7")
 # PWSCF
 progspec.add_option("--pwscf-pseudostring",dest="pwscfpseudostring",help='String to attach to the element name to identify the pseudopotential file (e.g. something like ".UPF"). somethimes, ".upf" is important',metavar=".UPF")
 progspec.add_option("--pwscf-atomic-units",dest="pwscfatomicunits",help="Write PWSCF .in file in atomic units (bohr) rather than angstrom.",action="store_true")
