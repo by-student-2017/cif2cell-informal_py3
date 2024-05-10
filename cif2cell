@@ -62,7 +62,7 @@ outputprograms = set(['abinit','atat','castep','cfg','coo','cpmd','cp2k','crysta
 alloyprograms = set(["atat","cfg","emto","kstr","bmdl","shape","kgrn","kfcd","cif","spc","sprkkr","xband","akaikkr"])
 vcaprograms = set(["castep","vasp"])
 #
-setupallprogs = set(["vasp","pwscf","quantum-espresso","rspt","mopac","abinit","openmx", "elk", "akaikkr", "fdmnes"])
+setupallprogs = set(["vasp","pwscf","quantum-espresso","rspt","mopac","abinit","openmx","elk","akaikkr","lammps","fdmnes"])
 setupallstring = ""
 for p in setupallprogs:
     setupallstring += p+", "
@@ -159,10 +159,15 @@ progspec.add_option("--emto-hard-sphere-radii",dest="hardsphereradii",help="Set 
 # FHI-AIMS
 progspec.add_option("--fhi-aims-cartesian", dest="aimscartesian", help="Store the coordinates for FHI-AIMS in cartesian format.", action="store_true")
 # MOPAC
-progspec.add_option("--mopac-first-line", dest="mopacfirstline", help="String to be used for the first line (the run commands) of the MOPAC input.",metavar='"string"')
-progspec.add_option("--mopac-second-line", dest="mopacsecondline", help="String to be used for the second line (documentation) of the MOPAC input.",metavar='"string"')
-progspec.add_option("--mopac-third-line", dest="mopacthirdline", help="String to be used for the third line (documentation) of the MOPAC input.",metavar='"string"')
+progspec.add_option("--mopac-first-line", dest="mopacfirstline", help="String to be used for the first line (the run commands) of the MOPAC input.",metavar='"PM7 CHARGE=0"')
+progspec.add_option("--mopac-second-line", dest="mopacsecondline", help="String to be used for the second line (documentation) of the MOPAC input.",metavar='"Title"')
+progspec.add_option("--mopac-third-line", dest="mopacthirdline", help="String to be used for the third line (documentation) of the MOPAC input.",metavar='"structure optimization"')
+progspec.add_option("--mopac-end-line", dest="mopacendline", help="String to be used for the end line (documentation) of the MOPAC input.",metavar='""')
 progspec.add_option("--mopac-freeze-structure", dest="mopacfreeze", help="If set to 'T' then add a 0 after each coordinate (freezing the structure), if set to 'F' then add a 1 (allowing everything to relax).",metavar='T/F')
+progspec.add_option("--mopac-run-type",dest="mopacruntype",help="output template (input file) for every run type. e.g. opt, noopt, 1scf, mozyme, opt+cis, cis, cisd, sparkle, esp, vectors, mep, saddle, ts, force, irc (default: opt)", metavar="opt")
+progspec.add_option("--mopac-charge",dest="mopaccharge",help="charge (default: 0)", metavar="0")
+progspec.add_option("--mopac-eps",dest="mopaceps",help="eps (default: 1.0) (Information; water:78.4, methanol:32.63, toluene:2.379, ethylene glycol:37.7, ammonia:16.9, vacuum:1.0)", metavar="0")
+progspec.add_option("--mopac-type",dest="mopactype",help="The semiempirical Hamiltonians: AM1, PM3, RM1, PM6, PM6-D3H4, PM7 or PM7-TS (default: PM7)",metavar="PM7")
 # PWSCF
 progspec.add_option("--pwscf-pseudostring",dest="pwscfpseudostring",help='String to attach to the element name to identify the pseudopotential file (e.g. something like ".UPF"). somethimes, ".upf" is important',metavar=".UPF")
 progspec.add_option("--pwscf-atomic-units",dest="pwscfatomicunits",help="Write PWSCF .in file in atomic units (bohr) rather than angstrom.",action="store_true")
@@ -1839,9 +1844,99 @@ if outputprogram == 'mcsqs':
 # Output for MOPAC
 if outputprogram == 'mopac':
     docstring = StandardDocstring()
-    mopacfirstline = ""
-    mopacsecondline = ""
-    mopacthirdline = ""
+    if options.mopactype:
+        mopactype = options.mopactype
+        mopacfirstline  = str(mopactype)+" "
+    else:
+        mopacfirstline  = "PM7 "
+    if options.mopaccharge:
+        mopaccharge = options.mopaccharge
+        mopacfirstline += "CHARGE="+str(mopaccharge)+" "
+    else:
+        mopacfirstline += "CHARGE=0 "
+    if options.mopaceps:
+        mopaceps = options.mopaceps
+        mopacfirstline += "EPS="+str(mopaceps)+" "
+    if options.mopacruntype == "opt":
+        mopacfirstline += ""
+        mopacsecondline = "# Title"
+        mopacthirdline  = "# The structure optimization"
+        mopacendline    = ""
+    elif options.mopacruntype == "noopt":
+        mopacfirstline += "AUX LARGE SINGLET NOOPT"
+        mopacsecondline = "# Title"
+        mopacthirdline  = "# No structure optimization"
+        mopacendline    = ""
+    elif options.mopacruntype == "1scf":
+        mopacfirstline += "1SCF"
+        mopacsecondline = "# Title"
+        mopacthirdline  = ""
+        mopacendline    = ""
+    elif options.mopacruntype == "mozyme":
+        mopacfirstline += "lbfgs mozyme"
+        mopacsecondline = "# Title (e.g., Short section of DNA)"
+        mopacthirdline  = ""
+        mopacendline    = ""
+    elif options.mopacruntype == "opt+cis":
+        mopacfirstline += ""
+        mopacsecondline = "# The structure optimization"
+        mopacthirdline  = "# next, the excited states calculation"
+        mopacendline    = "\nOLDGEO INDO CIS C.I.=8 MECI"
+    elif options.mopacruntype == "cis":
+        mopacfirstline  = "INDO CIS"
+        mopacsecondline = "# The excited states calculation"
+        mopacthirdline  = ""
+        mopacendline    = ""
+    elif options.mopacruntype == "cisd":
+        mopacfirstline  = "INDO CISD"
+        mopacsecondline = "# The excited states calculation"
+        mopacthirdline  = ""
+        mopacendline    = ""
+    elif options.mopacruntype == "sparkle":
+        mopacfirstline  = "SPARKLE BFGS GNORM=0.25 XYZ AUX"
+        mopacsecondline = "# SPARKLE"
+        mopacthirdline  = ""
+        mopacendline    = ""
+    elif options.mopacruntype == "esp":
+        mopacfirstline += "ESP"
+        mopacsecondline = "# The electrostatic potential charge"
+        mopacthirdline  = ""
+        mopacendline    = ""
+    elif options.mopacruntype == "vectors":
+        mopacfirstline += "EF XYZ VECTORS"
+        mopacsecondline = "# Title"
+        mopacthirdline  = ""
+        mopacendline    = ""
+    elif options.mopacruntype == "mep":
+        mopacfirstline += "EF PRECISE"
+        mopacsecondline = "# The input file for minimum energy path"
+        mopacthirdline  = ""
+        mopacendline    = "\n1.6 1.7 1.8 1.9 2.0 2.1 2.2 2.3"
+    elif options.mopacruntype == "saddle":
+        mopacfirstline += "PRECISE XYZ SADDLE"
+        mopacsecondline = "# The transition states calculation "
+        mopacthirdline  = ""
+        mopacendline    = ""
+    elif options.mopacruntype == "ts":
+        mopacfirstline += "UHF TS PRTCHAR"
+        mopacsecondline = "# The transition states calculation "
+        mopacthirdline  = ""
+        mopacendline    = ""
+    elif options.mopacruntype == "force":
+        mopacfirstline += "FORCE LET"
+        mopacsecondline = "# Force calculation (GEO_DAT=XXX_TS.arc)"
+        mopacthirdline  = ""
+        mopacendline    = ""
+    elif options.mopacruntype == "irc":
+        mopacfirstline += "LARGE=100 LET IRC=-1"
+        mopacsecondline = "# Reactants: IRC=-1, Products: IRC=1"
+        mopacthirdline  = "# (GEO_DAT=XXX_TS.arc)"
+        mopacendline    = ""
+    else:
+        mopacfirstline += ""
+        mopacsecondline = "# The structure optimization"
+        mopacthirdline  = ""
+        mopacendline    = ""
     mopacfreeze = -1
     mopacsetup = setupall
     if options.mopacfirstline:
@@ -1860,12 +1955,15 @@ if outputprogram == 'mopac':
             mopacfreeze = 0
         else:
             sys.stderr.write("***Warning: I do not understand. --mopac-freeze-structure takes T (t) or F (f) as inputs.\n")
+    if options.mopacendline:
+        mopacsetup = True
+        mopacendline = options.mopacendline
     mopacinput = MOPACFile(cd, docstring,setupall=mopacsetup,firstline=mopacfirstline,\
-                           secondline=mopacsecondline,thirdline=mopacthirdline,freeze=mopacfreeze)
+                           secondline=mopacsecondline,thirdline=mopacthirdline,freeze=mopacfreeze,endline=mopacendline)
     f = open(outputfile, outmode)
     f.write(str(mopacinput))
     f.close()
-    
+
 ################################################################################################
 # Output for TB-LMTO program ncol
 if outputprogram == 'ncol' or outputprogram == 'bstr':

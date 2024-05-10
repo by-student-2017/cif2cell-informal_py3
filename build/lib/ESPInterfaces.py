@@ -5943,7 +5943,7 @@ class MOPACFile(GeometryOutputFile):
     Class for storing the geometrical data needed for outputting a MOPAC file
     and the method __str__ that outputs the contents of the MOPAC file as a string.
     """
-    def __init__(self,crystalstructure,string,setupall=False,firstline="",secondline="",thirdline="",freeze=-1):
+    def __init__(self,crystalstructure,string,setupall=False,firstline="",secondline="",thirdline="",freeze=-1,endline=""):
         GeometryOutputFile.__init__(self,crystalstructure,string)
         self.cell.newunit(newunit="angstrom")
         self.setupall = setupall
@@ -5951,6 +5951,7 @@ class MOPACFile(GeometryOutputFile):
         self.secondline = secondline
         self.thirdline = thirdline
         self.freeze = freeze
+        self.endline = endline
         # Make sure the docstring has comment form
         self.docstring = self.docstring.rstrip("\n")
         tmpstrings = self.docstring.split("\n")
@@ -5968,10 +5969,7 @@ class MOPACFile(GeometryOutputFile):
     def __str__(self):
         filestring = self.docstring
         if self.setupall:
-            if self.firstline == "":
-                filestring += " BZ \n"
-            else:
-                filestring += self.firstline.rstrip("\n")+"\n"
+            filestring  = self.firstline.rstrip("\n")+"\n"
             filestring += self.secondline.rstrip("\n")+"\n"
             filestring += self.thirdline.rstrip("\n")+"\n"
         # Set up lattice vectors
@@ -5992,6 +5990,9 @@ class MOPACFile(GeometryOutputFile):
         # Print lattice vectors
         for l in lv:
             filestring += "Tv  "+str(l)+"\n"
+        # End line
+        if self.setupall:
+            filestring += self.endline.rstrip("\n")+"\n"
         return filestring
 ################################################################################################
 # AkaiKKR
