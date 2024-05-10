@@ -164,8 +164,8 @@ progspec.add_option("--mopac-second-line", dest="mopacsecondline", help="String 
 progspec.add_option("--mopac-third-line", dest="mopacthirdline", help="String to be used for the third line (documentation) of the MOPAC input.",metavar='"structure optimization"')
 progspec.add_option("--mopac-end-line", dest="mopacendline", help="String to be used for the end line (documentation) of the MOPAC input.",metavar='""')
 progspec.add_option("--mopac-freeze-structure", dest="mopacfreeze", help="If set to 'T' then add a 0 after each coordinate (freezing the structure), if set to 'F' then add a 1 (allowing everything to relax).",metavar='T/F')
-progspec.add_option("--mopac-run-type",dest="mopacruntype",help="output template (input file) for every run type. e.g. opt, noopt, 1scf, mozyme, opt+cis, cis, cisd, sparkle, esp, vectors, mep, saddle, ts, force, irc (default: opt)", metavar="opt")
-progspec.add_option("--mopac-charge",dest="mopaccharge",help="charge (default: 0)", metavar="0")
+progspec.add_option("--mopac-run-type",dest="mopacruntype",help="output template (input file) for every run type. e.g. opt, noopt, 1scf, mozyme, opt+cis, cis, cisd, cas, sparkle, sparkle+spin, sparkle+pKa, polar, pulay, esp, vectors, mep, saddle, ts, force, irc (default: opt)", metavar="opt")
+progspec.add_option("--mopac-charge",dest="mopaccharge",help="charge (default: 0), CHARGE=3 Triplet", metavar="0")
 progspec.add_option("--mopac-eps",dest="mopaceps",help="eps (default: 1.0) (Information; water:78.4, methanol:32.63, toluene:2.379, ethylene glycol:37.7, ammonia:16.9, vacuum:1.0)", metavar="0")
 progspec.add_option("--mopac-type",dest="mopactype",help="The semiempirical Hamiltonians: AM1, PM3, RM1, PM6, PM6-D3H4, PM7 or PM7-TS (default: PM7)",metavar="PM7")
 # PWSCF
@@ -1892,9 +1892,34 @@ if outputprogram == 'mopac':
         mopacsecondline = "# The excited states calculation"
         mopacthirdline  = ""
         mopacendline    = ""
+    elif options.mopacruntype == "cas":
+        mopacfirstline  = "INDO MRCI C.I.=(24,12) C.A.S.=(2,1) MAXCI=500 WRTCI=50 WRTCONF=0.1"
+        mopacsecondline = "# (template)"
+        mopacthirdline  = ""
+        mopacendline    = ""
     elif options.mopacruntype == "sparkle":
         mopacfirstline  = "SPARKLE BFGS GNORM=0.25 XYZ AUX"
         mopacsecondline = "# SPARKLE"
+        mopacthirdline  = ""
+        mopacendline    = ""
+    elif options.mopacruntype == "sparkle+spin":
+        mopacfirstline  = "SPARKLE BFGS GNORM=0.25 XYZ AUX UHF SPIN"
+        mopacsecondline = "# SPARKLE+SPIN"
+        mopacthirdline  = ""
+        mopacendline    = ""
+    elif options.mopacruntype == "sparkle+pKa":
+        mopacfirstline  = "SPARKLE BFGS GNORM=0.25 XYZ pKa"
+        mopacsecondline = "# SPARKLE+pKa"
+        mopacthirdline  = ""
+        mopacendline    = ""
+    elif options.mopacruntype == "polar":
+        mopacfirstline  = "POLAR PRECISE"
+        mopacsecondline = "# The polarizability calculation"
+        mopacthirdline  = ""
+        mopacendline    = ""
+    elif options.mopacruntype == "pulay":
+        mopacfirstline  = "PULAY 1SCF"
+        mopacsecondline = ""
         mopacthirdline  = ""
         mopacendline    = ""
     elif options.mopacruntype == "esp":
