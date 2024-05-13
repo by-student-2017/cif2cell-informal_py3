@@ -7211,11 +7211,12 @@ class INLMPFile:
         else:
             pass
     def __str__(self):
-        tmp = self.docstring
-        tmp += "\n"
+        tmp = "#-----------------------------------------------------------------------------------------\n"
+        tmp += self.docstring
         tmp += "#-----------------------------------------------------------------------------------------\n"
         tmp += "# LAMMPS 64-bit 22Dec2022-MSMPI \n"
         tmp += "clear \n"
+        tmp += "echo both      # echoes each input script command to both log file and screen \n"
         tmp += "#-------------------- Environment Settings -----------------------------------------------\n"
         tmp += "variable  Tdesird equal  %-7.2f # Desired Temperature [K] \n"%float(self.temperature)
         tmp += "variable  Pdesird equal  %-8.4f # Desired Pressure [bar] = 100 [kPa] = 0.1 [MPa] \n"%float(self.pressure)
@@ -7228,8 +7229,10 @@ class INLMPFile:
             tmp += "# L(t) = L(0)*(1 + es_rate*dt*step) \n"
             tmp += "# strain [%] = es_rate*dt*Nstep*100 [%] = 0.1 * 0.001 * 4000 * 100 = 40 [%] \n"
             tmp += "\n"
+        if self.runtype == "mc":
+            tmp += "variable  MC_temp equal 1300.0 # Temperature of MC [K] \n"
+            tmp += "\n"
         tmp += "#-------------------- Initialization -----------------------------------------------------\n"
-        tmp += "echo both      # echoes each input script command to both log file and screen \n"
         if self.pottype == "ReaxFF" or self.pottype == "":
             tmp += "units real     # determines units of all quantities used in the input file \n"
         else:
@@ -7248,6 +7251,7 @@ class INLMPFile:
         #
         elements = ""
         elements_string = "variable elem string \""
+        mc_element = ""
         matomTypes = {}
         mnextAtomTypeId = 1
         for a in self.cell.atomdata:
@@ -7257,6 +7261,7 @@ class INLMPFile:
                 if not matomType in matomTypes:
                     #tmp += str(mnextAtomTypeId)+" "+str(ed.elementweight[sp_b])+" # "+str(sp_b)+"\n"
                     elements += str(sp_b)
+                    mc_element += str(mnextAtomTypeId)+":"+str(sp_b)+", "
                     if mnextAtomTypeId != 1:
                       elements_string += " " + str(sp_b)
                     else:
@@ -7309,7 +7314,21 @@ class INLMPFile:
             tmp += "pair_coeff * * "+str(elements)+".sw ${elem} \n"
             tmp += "\n"
         #
-        tmp += "\n"
+        if self.runtype == "mc":
+            tmp += "#-------------------- Monte Carlo swaps  -------------------------------------------------\n"
+            if (mnextAtomTypeId-1) != 1:
+                tmp += "# Memo; "+str(mc_element)+"\n"
+                for atom1 in range(1,mnextAtomTypeId):
+                    for atom2 in range(1,atom1):
+                        tmp += "fix mc"+str(atom1)+str(atom2)+" all atom/swap 1 1 12345 ${MC_temp} ke no types "+str(atom1)+" "+str(atom2)+" \n"
+                tmp += "run ${MC_Nsteps} \n"
+                for atom1 in range(1,mnextAtomTypeId):
+                    for atom2 in range(1,atom1):
+                        tmp += "unfix mc"+str(atom1)+str(atom2)+"\n"
+            else:
+                tmp += "# Note: Do not swap because it is one element. \n"
+            tmp += "\n"
+        #
         tmp += "#-------------------- Energy Minimization ------------------------------------------------\n"
         tmp += "# 0 [K], structure optimization \n"
         tmp += "minimize 1.0e-4 1.0e-6 100 1000 # Normal case \n"
@@ -7339,29 +7358,32 @@ class INLMPFile:
         tmp += "#-------------------------------------------------------------------------------\n"
         #
         tmp += "\n"
-        tmp += "velocity all create 300 873847 rot yes mom yes dist gaussian # sets the velocity of a group of atoms \n"
-        #
+        tmp += "# sets the velocity of a group of atoms \n"
+        tmp += "velocity all create 298.15 123456 rot yes mom yes dist gaussian \n"
         tmp += "\n"
+        #
         tmp += "#-------------------- Run the simulation -------------------------------------------------\n"
         if self.runtype == "ann" or self.runtype == "":
             tmp += "# Annealing Simulation \n"
-            tmp += "fix 1 all npt temp 100 100 0.1 iso 0 0 0.1 # temp and pressure conserved \n"
-            tmp += "run 1000 # program is run for 1000 iterations \n"
-            tmp += "unfix 1"
+            tmp += "\n"
+            tmp += "# Heating and pressure process \n"
+            tmp += "fix 1 all npt temp 298.15 ${Tdesird} $(100.0*dt) iso 1.0 ${Pdesird} $(1000.0*dt) \n"
+            tmp += "run ${Nsteps} # program is run for Nsteps iterations \n"
+            tmp += "unfix 1 \n"
+            tmp += "\n"
+            tmp += "# Heat retention \n"
+            tmp += "fix 2 all nvt temp ${Tdesird} ${Tdesird} $(100.0*dt) iso ${Pdesird} ${Pdesird} $(1000.0*dt) \n"
+            tmp += "run ${Nsteps} # program is run for Nsteps iterations \n"
+            tmp += "unfix 2 \n"
+            tmp += "\n"
+            tmp += "# Cooling and depressurization process \n"
+            tmp += "fix 3 all nvt temp ${Tdesird} 298.15 $(100.0*dt) iso ${Pdesird} 1.0 $(1000.0*dt) \n"
+            tmp += "run ${Nsteps} # program is run for Nsteps iterations \n"
+            tmp += "unfix 3 \n"
             tmp += "\n"
         elif self.runtype == "dif":
             tmp += "# Diffusion Simulation \n"
             tmp += "\n"
-        elif self.runtype == "mc":
-            tmp += "# Monte Carlo Simulation \n"
-            tmp += "\n"
-        elif self.runtype == "rdf":
-            tmp += "# Monte Carlo Simulation \n"
-            tmp += "# calculates the radial distribution function (RDF) and output file \n"
-            tmp += "compute 11 all rdf 100 \n"
-            tmp += "fix r1 all ave/time 100 1 100 c_11[*] file rdf_Test_40_strain.rdf mode vector \n"
-            tmp += "\n"
-        #
         elif self.runtype == "ten" or self.runtype == "com":
             tmp += "# stress-strain Simulation \n"
             tmp += "compute 1 all stress/atom NULL  # computes the symmetric per-atom stress tensor for each atom in a group. \n"
@@ -7425,8 +7447,14 @@ class INLMPFile:
             tmp += "# metal unit: press = bar = 0.1 MPa, length = Angstrom = 1e-10 m \n"
             tmp += "#-------------------------------------------------------------------------------- \n"
             tmp += "\n"
+            
+        if self.runtype == "rdf":
+            tmp += "#-------------------- Output data file ---------------------------------------------------\n"
+            tmp += "# calculates the radial distribution function (RDF) and output file \n"
+            tmp += "compute 11 all rdf 100 \n"
+            tmp += "fix r1 all ave/time 100 1 100 c_11[*] file rdf_Test_40_strain.rdf mode vector \n"
+            tmp += "\n"
         #
-        tmp += "\n"
         tmp += "#-------------------- Output data file ---------------------------------------------------\n"
         tmp += "write_data output.dat \n"
         tmp += "\n"
