@@ -7193,6 +7193,8 @@ class INLMPFile:
         self.pottype = pottype
         self.runtype = runtype
         self.filename = ""
+        self.pressure = 1.0
+        self.temperature = 300.0
         # we need the potcar directory
         if potcardir != "":
             self.potcardir = potcardir
@@ -7211,10 +7213,23 @@ class INLMPFile:
     def __str__(self):
         tmp = self.docstring
         tmp += "\n"
-        tmp += "#-------------------- Initialization -----------------------------------------------------\n"
+        tmp += "#-----------------------------------------------------------------------------------------\n"
+        tmp += "# LAMMPS 64-bit 22Dec2022-MSMPI \n"
         tmp += "clear \n"
-        tmp += "echo both      # echoes each input script command to both log file and screen \n"
+        tmp += "#-------------------- Environment Settings -----------------------------------------------\n"
+        tmp += "variable  Tdesird equal  %-7.2f # Desired Temperature [K] \n"%float(self.temperature)
+        tmp += "variable  Pdesird equal  %-8.4f # Desired Pressure [bar] = 100 [kPa] = 0.1 [MPa] \n"%float(self.pressure)
         tmp += "\n"
+        tmp += "variable   Nsteps equal   4000 # Number of simulation cycles \n"
+        tmp += "\n"
+        if self.runtype == "ten" or self.runtype == "com":
+            tmp += "variable  es_rate equal    0.1 # engineering strain rate (1/time units) \n"
+            tmp += "# Note: es_rate/dt = 0.1 / (1e-15) = 1.0e13 [1/s] \n"
+            tmp += "# L(t) = L(0)*(1 + es_rate*dt*step) \n"
+            tmp += "# strain [%] = es_rate*dt*Nstep*100 [%] = 0.1 * 0.001 * 4000 * 100 = 40 [%] \n"
+            tmp += "\n"
+        tmp += "#-------------------- Initialization -----------------------------------------------------\n"
+        tmp += "echo both      # echoes each input script command to both log file and screen \n"
         if self.pottype == "ReaxFF" or self.pottype == "":
             tmp += "units real     # determines units of all quantities used in the input file \n"
         else:
@@ -7334,17 +7349,81 @@ class INLMPFile:
             tmp += "run 1000 # program is run for 1000 iterations \n"
             tmp += "unfix 1"
             tmp += "\n"
-        elif self.runtype == "ten":
-            tmp += "# Tensile Simulation \n"
-            tmp += "\n"
-        elif self.runtype == "com":
-            tmp += "# Compression Simulation \n"
-            tmp += "\n"
         elif self.runtype == "dif":
             tmp += "# Diffusion Simulation \n"
             tmp += "\n"
         elif self.runtype == "mc":
             tmp += "# Monte Carlo Simulation \n"
+            tmp += "\n"
+        elif self.runtype == "rdf":
+            tmp += "# Monte Carlo Simulation \n"
+            tmp += "# calculates the radial distribution function (RDF) and output file \n"
+            tmp += "compute 11 all rdf 100 \n"
+            tmp += "fix r1 all ave/time 100 1 100 c_11[*] file rdf_Test_40_strain.rdf mode vector \n"
+            tmp += "\n"
+        #
+        elif self.runtype == "ten" or self.runtype == "com":
+            tmp += "# stress-strain Simulation \n"
+            tmp += "compute 1 all stress/atom NULL  # computes the symmetric per-atom stress tensor for each atom in a group. \n"
+            tmp += "compute 2 all temp              # computes the temp of a group of atoms \n"
+            tmp += "compute 3 all reduce sum c_1[2] # reduces vector quantities of all stress tensors in y-direction and adds all the quantities to a single \n"
+            tmp += "compute kea all ke/atom         # This is related to temperature \n"
+            tmp += "\n"
+            tmp += "variable    tmp equal ly \n"
+            tmp += "variable     lo equal ${tmp} \n"
+            tmp += "variable strain equal (ly-v_lo)/v_lo \n"
+            tmp += "\n"
+            tmp += "#for units metal, pressure is in 1 [bars] = 100 [kPa] = 0.1 [MPa] = 1x10^-4 [GPa] => p, is in GPa \n"
+            tmp += "variable     p2 equal -pyy/10000         # assign a value to the variable name strain \n"
+            tmp += "\n"
+            tmp += "variable stress     equal c_3/vol        # assigns a value to the variable name stress \n"
+            tmp += "variable stress_GPa equal v_stress/10000 # converts the stress calculated to GPa \n"
+            tmp += "variable stress_MPa equal v_stress_GPa*1000 # Note: 1 GPa = 1000 MPa \n"
+            tmp += "\n"
+            tmp += "thermo_style custom step temp press vol etotal c_2 v_strain v_stress v_stress_GPa v_stress_MPa v_p2 \n"
+            tmp += "\n"
+            tmp += "#---------- output file settings -------------------\n"
+            tmp += "fix fo1 all ave/time 1 3 3 c_2 v_strain v_stress v_stress_GPa v_p2 file stress_vs_strain.txt \n"
+            tmp += "#---------------------------------------------------\n"
+            tmp += "undump d1 \n"
+            tmp += "dump        d2 all cfg 100 cfg/run.*.cfg mass type xs ys zs id type vx vy vz fx fy fz c_kea \n"
+            tmp += "dump_modify d2 element ${elem} \n"
+            tmp += "#---------------------------------------------------\n"
+            tmp += "\n"
+            #
+            tmp += "# Tensile Simulation \n"
+            tmp += "#-------------------- Run the simulation -------------------------------------------------\n"
+            tmp += "# strain rate of 0.1 [1/dt] is applied in y direction \n"
+            tmp += "fix d1 all deform 1 y erate ${es_rate} \n"
+            tmp += "\n"
+            tmp += "# all atoms rescaled to new positions while temp and pressure is conserved \n"
+            tmp += "fix 2 all npt temp ${Tdesird} ${Tdesird} $(v_Nsteps*dt) x 0 0 $(v_Nsteps*dt) z 0 0 $(v_Nsteps*dt) dilate all # Adiabatic conditions \n"
+            tmp += "\n"
+            tmp += "# Resets the temp of atoms to 300 K by rescaling velocities after every 10 steps \n"
+            tmp += "fix 3 all temp/rescale 10 ${Tdesird} ${Tdesird} 0.05 1.0 \n"
+            tmp += "\n"
+            tmp += "# number of iterations is given so as to give 40% strain to the material \n"
+            tmp += "run ${Nsteps}"
+            tmp += "\n"
+            #
+            tmp += "#-------------------------------------------------------------------------------- \n"
+            tmp += "# The calculation conditions for this time are as follows. \n"
+            tmp += "#-------------------------------------------------------------------------------- \n"
+            tmp += "variable strain_rate_percent equal \"(v_strain)/(v_dt_ps * v_Nsteps)*100\" # [%/ps] \n"
+            tmp += "variable strain_rate equal \"(v_strain)/(v_dt_ps * v_Nsteps)\" # [1/ps] \n"
+            tmp += "print \"strain_rate: ${strain_rate_percent} [%/ps] at setting temperature ${Tdesird} [K]\" \n"
+            tmp += "print \"strain rate: ${strain_rate} x 10^12 [1/s] at setting temperature ${Tdesird} [K]\" \n"
+            tmp += "#-------------------------------------------------------------------------------- \n"
+            tmp += "\n"
+            tmp += "#-------------------------------------------------------------------------------- \n"
+            tmp += "# Note \n"
+            tmp += "# compute        peratom all stress/atom NULL \n"
+            tmp += "# compute        p all reduce sum c_peratom[1] c_peratom[2] c_peratom[3] \n"
+            tmp += "# variable       press equal -(c_p[1]+c_p[2]+c_p[3])/(3*vol) \n"
+            tmp += "# # pxx = -c_p[1]/(3*vol), pyy = -c_p[2]/(3*vol), pzz = -c_p[3]/(3*vol) \n"
+            tmp += "# thermo_style   custom step temp etotal press v_press \n"
+            tmp += "# metal unit: press = bar = 0.1 MPa, length = Angstrom = 1e-10 m \n"
+            tmp += "#-------------------------------------------------------------------------------- \n"
             tmp += "\n"
         #
         tmp += "\n"
