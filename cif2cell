@@ -277,7 +277,7 @@ progspec.add_option("--fdmnes-spherical",dest="fdmnes_spherical",help="show the 
 progspec.add_option("--fdmnes-edge",dest="fdmnes_edge",help="K, L1, L2, L3, L23, M1, M23, M45, N23, N45, etc. (defaults K).",metavar="K")
 # LAMMPS
 progspec.add_option("--lammps-pottype",dest="lammps_pottype",help="Potential type, e.g. ReaxFF, MEAM, EAM, FS, ADP, COMP3, AIREBO, Tersoff, SW (=Stillinger-Weber) (default: ReaxFF)", metavar="ReaxFF")
-progspec.add_option("--lammps-dt",dest="lammps_dt",help="timestep: dt = 0.25 (ReaxFF at 0-1250 K), 0.1 (ReaxFF at 1251-4500 K), 1.0 (MEAM, EAM, FS, ADP, COMP3, Tersoff and SW) or 0.1 (AIREBO) (default: dt=0.25)", metavar="0.25")
+progspec.add_option("--lammps-dt",dest="lammps_dt",help="timestep: dt = 0.25 (ReaxFF at 0-1250 K), 0.1 (ReaxFF at 1251-4500 K), 1.0 (MEAM, EAM, FS, ADP, COMP3, Tersoff and SW) or 0.1 (AIREBO) (default: 0.25 [fs])", metavar="0.25")
 progspec.add_option("--lammps-runtype",dest="lammps_runtype",help="Type of calculation: e.g., ann (=Annealing), ten (=Tensile), com (=Compression), dif (=Diffusion), mc (=Monte Carlo) (default: ann (=Annealing))", metavar="ann")
 #progspec.add_option("--lammps-temperature",dest="lammps_temperature",help="output template (input file) for ion move calculation under any temperature (K). (default: 300.0 K)", metavar=300.0)
 #progspec.add_option("--lammps-pressure",dest="lammps_pressure",help="output template (input file) for calculation under pressure (Bar)). 1 Bar = 0.001 kBar = 100 kPa = 0.1 MPa. This pressure in NPT (default: 1.0 Bar)", metavar=1.0)
