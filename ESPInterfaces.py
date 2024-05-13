@@ -7357,9 +7357,11 @@ class INLMPFile:
         else:
             if self.pottype == "ReaxFF" or self.pottype == "":
                 tmp += "timestep "+str(self.dt)+" # [fs] for real unit \n"
+                dt = float(self.dt)
             else:
-                tmp += "timestep "+str(self.dt)+" # [ps] for metal unit \n"
-            dt = float(self.dt)
+                tmp += "# Note: Convert [fs] to [ps] region. \n"
+                tmp += "timestep "+str(float(self.dt)/1000)+" # [ps] for metal unit = "+str(self.dt)+" [fs] \n"
+                dt = float(self.dt)/1000
         tmp += "\n"
         tmp += "thermo 100 # computes and prints thermodynamic \n"
         tmp += "thermo_style custom step temp vol press etotal # specifies content of thermodynamic data to be printed in screen \n"
