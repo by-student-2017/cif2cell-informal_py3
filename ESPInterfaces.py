@@ -7381,10 +7381,19 @@ class INLMPFile:
             tmp += "run ${Nsteps} # program is run for Nsteps iterations \n"
             tmp += "unfix 3 \n"
             tmp += "\n"
-        elif self.runtype == "dif":
+        #
+        if self.runtype == "rdf":
+            tmp += "#-------------------- Output data file ---------------------------------------------------\n"
+            tmp += "# calculates the radial distribution function (RDF) and output file \n"
+            tmp += "compute 11 all rdf 100 \n"
+            tmp += "fix r1 all ave/time 100 1 100 c_11[*] file rdf_Test_40_strain.rdf mode vector \n"
+            tmp += "\n"
+        #
+        if self.runtype == "dif":
             tmp += "# Diffusion Simulation \n"
             tmp += "\n"
-        elif self.runtype == "ten" or self.runtype == "com":
+        #
+        if self.runtype == "ten" or self.runtype == "com":
             tmp += "# stress-strain Simulation \n"
             tmp += "compute 1 all stress/atom NULL  # computes the symmetric per-atom stress tensor for each atom in a group. \n"
             tmp += "compute 2 all temp              # computes the temp of a group of atoms \n"
@@ -7446,13 +7455,6 @@ class INLMPFile:
             tmp += "# thermo_style   custom step temp etotal press v_press \n"
             tmp += "# metal unit: press = bar = 0.1 MPa, length = Angstrom = 1e-10 m \n"
             tmp += "#-------------------------------------------------------------------------------- \n"
-            tmp += "\n"
-            
-        if self.runtype == "rdf":
-            tmp += "#-------------------- Output data file ---------------------------------------------------\n"
-            tmp += "# calculates the radial distribution function (RDF) and output file \n"
-            tmp += "compute 11 all rdf 100 \n"
-            tmp += "fix r1 all ave/time 100 1 100 c_11[*] file rdf_Test_40_strain.rdf mode vector \n"
             tmp += "\n"
         #
         tmp += "#-------------------- Output data file ---------------------------------------------------\n"
