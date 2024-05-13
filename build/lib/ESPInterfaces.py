@@ -7195,6 +7195,7 @@ class INLMPFile:
         self.filename = ""
         self.pressure = 1.0
         self.temperature = 300.0
+        self.rdf = "no"
         # we need the potcar directory
         if potcardir != "":
             self.potcardir = potcardir
@@ -7390,16 +7391,6 @@ class INLMPFile:
             tmp += "unfix f3 \n"
             tmp += "\n"
         #
-        if self.runtype == "rdf":
-            tmp += "# calculates the radial distribution function (RDF) and output file \n"
-            tmp += "compute 11 all rdf 100 \n"
-            tmp += "fix r1 all ave/time 100 1 100 c_11[*] file rdf_Test_40_strain.rdf mode vector \n"
-            tmp += "\n"
-            tmp += "fix f2 all nvt temp ${Tdesird} ${Tdesird} $(100.0*dt) \n"
-            tmp += "run ${Nsteps} # program is run for Nsteps iterations (Note: dt*${Nsteps}/1000 = %6.2f [ps])\n"%(dt*4000/1000)
-            tmp += "unfix f2 \n"
-            tmp += "\n"
-        #
         if self.runtype == "msd":
             tmp += "# MSD (Mean Square Displacement) Simulation \n"
             tmp += "# Memo; "+str(mc_element)+"\n"
@@ -7477,6 +7468,21 @@ class INLMPFile:
             tmp += "# thermo_style   custom step temp etotal press v_press \n"
             tmp += "# metal unit: press = bar = 0.1 MPa, length = Angstrom = 1e-10 m \n"
             tmp += "#-------------------------------------------------------------------------------- \n"
+            tmp += "\n"
+        #
+        if self.rdf == "yes":
+            tmp += "#-------------------- Output data (RDF)---------------------------------------------------\n"
+            tmp += "# calculates the radial distribution function (RDF) and output file \n"
+            tmp += "# These are templates for input files. Please rewrite it to suit your needs. \n"
+            tmp += "\n"
+            tmp += "# RDF settings \n"
+            tmp += "compute 11 all rdf 100 \n"
+            tmp += "fix r1 all ave/time 100 1 100 c_11[*] file rdf_strain.rdf mode vector \n"
+            tmp += "\n"
+            tmp += "# Sets NVT and Run NVT + RDF calculations \n"
+            tmp += "fix f2 all nvt temp ${Tdesird} ${Tdesird} $(100.0*dt) \n"
+            tmp += "run ${Nsteps} # program is run for Nsteps iterations (Note: dt*${Nsteps}/1000 = %6.2f [ps])\n"%(dt*4000/1000)
+            tmp += "unfix f2 \n"
             tmp += "\n"
         #
         tmp += "#-------------------- Output data file ---------------------------------------------------\n"
