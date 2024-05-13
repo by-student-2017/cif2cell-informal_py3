@@ -7218,10 +7218,10 @@ class INLMPFile:
         tmp += "clear \n"
         tmp += "echo both      # echoes each input script command to both log file and screen \n"
         tmp += "#-------------------- Environment Settings -----------------------------------------------\n"
-        tmp += "variable  Tdesird equal  %-7.2f # Desired Temperature [K] \n"%float(self.temperature)
-        tmp += "variable  Pdesird equal  %-8.4f # Desired Pressure [bar] = 100 [kPa] = 0.1 [MPa] \n"%float(self.pressure)
+        tmp += "variable  Tdesird equal  %-7.2f # Desired Temperature [K] unit \n"%float(self.temperature)
+        tmp += "variable  Pdesird equal  %-7.3f # Desired Pressure [bar] unit (= 100 [kPa] = 0.1 [MPa]) \n"%float(self.pressure)
         tmp += "\n"
-        tmp += "variable   Nsteps equal   4000 # Number of simulation cycles \n"
+        tmp += "variable   Nsteps equal    4000 # Number of simulation cycles \n"
         tmp += "\n"
         if self.runtype == "ten" or self.runtype == "com":
             tmp += "variable  es_rate equal    0.1 # engineering strain rate (1/time units) \n"
@@ -7253,6 +7253,7 @@ class INLMPFile:
         elements_string = "variable elem string \""
         mc_element = ""
         matomTypes = {}
+        satomTypes = {}
         mnextAtomTypeId = 1
         for a in self.cell.atomdata:
             for b in a:
@@ -7261,12 +7262,14 @@ class INLMPFile:
                 if not matomType in matomTypes:
                     #tmp += str(mnextAtomTypeId)+" "+str(ed.elementweight[sp_b])+" # "+str(sp_b)+"\n"
                     elements += str(sp_b)
-                    mc_element += str(mnextAtomTypeId)+":"+str(sp_b)+", "
                     if mnextAtomTypeId != 1:
                       elements_string += " " + str(sp_b)
+                      mc_element += ", "+str(mnextAtomTypeId)+":"+str(sp_b)
                     else:
                       elements_string += str(sp_b)
+                      mc_element += str(mnextAtomTypeId)+":"+str(sp_b)
                     matomTypes[matomType] = mnextAtomTypeId
+                    satomTypes[mnextAtomTypeId] = str(sp_b)
                     mnextAtomTypeId += 1
         tmp += elements_string + "\"\n"
         #
@@ -7276,6 +7279,7 @@ class INLMPFile:
             tmp += "pair_style reax/c NULL \n"
             tmp += "pair_coeff * * ffield.reax ${elem} \n"
             tmp += "\n"
+            tmp += "# Handle charges using the QEq method. \n"
             tmp += "fix q1 all qeq/reax 1 0.0 10.0 1e-6 reax/c \n"
             tmp += "\n"
         elif self.pottype == "MEAM":
@@ -7298,6 +7302,7 @@ class INLMPFile:
             tmp += "pair_style comb3 polar_off \n"
             tmp += "pair_coeff * * ffield.comb3."+str(elements)+" ${elem} \n"
             tmp += "\n"
+            tmp += "# Handle charges using the QEq method. \n"
             tmp += "fix q1 all qeq/comb 10 1.0e-3 \n"
             tmp += ""
             tmp += "\n"
@@ -7340,10 +7345,13 @@ class INLMPFile:
         tmp += "\n"
         if self.pottype == "ReaxFF" or self.pottype == "":
             tmp += "timestep 0.25   # 0.25 [fs], sets the timestep for subsequent simulations \n"
+            dt = 0.25
         elif self.pottype == "AIREBO":
             tmp += "timestep 0.0001 # 0.1 [fs], sets the timestep for subsequent simulations \n"
+            dt = 0.10
         else:
             tmp += "timestep 0.001  # 1.0 [fs], sets the timestep for subsequent simulations \n"
+            dt = 1.00
         tmp += "\n"
         tmp += "thermo 100 # computes and prints thermodynamic \n"
         tmp += "thermo_style custom step temp vol press etotal # specifies content of thermodynamic data to be printed in screen \n"
@@ -7367,30 +7375,44 @@ class INLMPFile:
             tmp += "# Annealing Simulation \n"
             tmp += "\n"
             tmp += "# Heating and pressure process \n"
-            tmp += "fix 1 all npt temp 298.15 ${Tdesird} $(100.0*dt) iso 1.0 ${Pdesird} $(1000.0*dt) \n"
-            tmp += "run ${Nsteps} # program is run for Nsteps iterations \n"
-            tmp += "unfix 1 \n"
+            tmp += "fix f1 all npt temp 298.15 ${Tdesird} $(100.0*dt) iso 1.0 ${Pdesird} $(1000.0*dt) \n"
+            tmp += "run ${Nsteps} # program is run for Nsteps iterations (Note: dt*${Nsteps}/1000 = %6.2f [ps])\n"%(dt*4000/1000)
+            tmp += "unfix f1 \n"
             tmp += "\n"
             tmp += "# Heat retention \n"
-            tmp += "fix 2 all nvt temp ${Tdesird} ${Tdesird} $(100.0*dt) iso ${Pdesird} ${Pdesird} $(1000.0*dt) \n"
-            tmp += "run ${Nsteps} # program is run for Nsteps iterations \n"
-            tmp += "unfix 2 \n"
+            tmp += "fix f2 all nvt temp ${Tdesird} ${Tdesird} $(100.0*dt) \n"
+            tmp += "run ${Nsteps} # program is run for Nsteps iterations (Note: dt*${Nsteps}/1000 = %6.2f [ps])\n"%(dt*4000/1000)
+            tmp += "unfix f2 \n"
             tmp += "\n"
             tmp += "# Cooling and depressurization process \n"
-            tmp += "fix 3 all nvt temp ${Tdesird} 298.15 $(100.0*dt) iso ${Pdesird} 1.0 $(1000.0*dt) \n"
-            tmp += "run ${Nsteps} # program is run for Nsteps iterations \n"
-            tmp += "unfix 3 \n"
+            tmp += "fix f3 all npt temp ${Tdesird} 298.15 $(100.0*dt) iso ${Pdesird} 1.0 $(1000.0*dt) \n"
+            tmp += "run ${Nsteps} # program is run for Nsteps iterations (Note: dt*${Nsteps}/1000 = %6.2f [ps])\n"%(dt*4000/1000)
+            tmp += "unfix f3 \n"
             tmp += "\n"
         #
         if self.runtype == "rdf":
-            tmp += "#-------------------- Output data file ---------------------------------------------------\n"
             tmp += "# calculates the radial distribution function (RDF) and output file \n"
             tmp += "compute 11 all rdf 100 \n"
             tmp += "fix r1 all ave/time 100 1 100 c_11[*] file rdf_Test_40_strain.rdf mode vector \n"
             tmp += "\n"
+            tmp += "fix f2 all nvt temp ${Tdesird} ${Tdesird} $(100.0*dt) \n"
+            tmp += "run ${Nsteps} # program is run for Nsteps iterations (Note: dt*${Nsteps}/1000 = %6.2f [ps])\n"%(dt*4000/1000)
+            tmp += "unfix f2 \n"
+            tmp += "\n"
         #
-        if self.runtype == "dif":
-            tmp += "# Diffusion Simulation \n"
+        if self.runtype == "msd":
+            tmp += "# MSD (Mean Square Displacement) Simulation \n"
+            tmp += "# Memo; "+str(mc_element)+"\n"
+            tmp += "# ----- \n"
+            for natom in range(1,mnextAtomTypeId):
+                tmp += "group "+satomTypes[natom]+" type "+str(natom)+" \n"
+                tmp += "compute "+satomTypes[natom]+"msd "+satomTypes[natom]+" msd \n"
+                tmp += "fix f"+str(natom)+" all ave/time 1 1 5 c_"+satomTypes[natom]+"msd[*] file out_"+satomTypes[natom]+"_msd.txt \n"
+                tmp += "# ----- \n"
+            tmp += "\n"
+            tmp += "fix f"+str(natom+1)+" all nvt temp ${Tdesird} ${Tdesird} $(100.0*dt) \n"
+            tmp += "run ${Nsteps} # program is run for Nsteps iterations (Note: dt*${Nsteps}/1000 = %6.2f [ps])\n"%(dt*4000/1000)
+            tmp += "unfix f"+str(natom+1)+" \n"
             tmp += "\n"
         #
         if self.runtype == "ten" or self.runtype == "com":
@@ -7428,13 +7450,13 @@ class INLMPFile:
             tmp += "fix d1 all deform 1 y erate ${es_rate} \n"
             tmp += "\n"
             tmp += "# all atoms rescaled to new positions while temp and pressure is conserved \n"
-            tmp += "fix 2 all npt temp ${Tdesird} ${Tdesird} $(v_Nsteps*dt) x 0 0 $(v_Nsteps*dt) z 0 0 $(v_Nsteps*dt) dilate all # Adiabatic conditions \n"
+            tmp += "fix 2 all npt temp ${Tdesird} ${Tdesird} $(dt*v_Nsteps) x 0 0 $(dt*v_Nsteps) z 0 0 $(dt*v_Nsteps) dilate all # Adiabatic conditions \n"
             tmp += "\n"
             tmp += "# Resets the temp of atoms to 300 K by rescaling velocities after every 10 steps \n"
             tmp += "fix 3 all temp/rescale 10 ${Tdesird} ${Tdesird} 0.05 1.0 \n"
             tmp += "\n"
             tmp += "# number of iterations is given so as to give 40% strain to the material \n"
-            tmp += "run ${Nsteps}"
+            tmp += "run ${Nsteps} # program is run for Nsteps iterations (Note: dt*${Nsteps}/1000 = %6.2f [ps])\n"%(dt*4000/1000)
             tmp += "\n"
             #
             tmp += "#-------------------------------------------------------------------------------- \n"
