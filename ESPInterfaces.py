@@ -7069,10 +7069,11 @@ class LAMMPSFile(GeometryOutputFile):
     Class for storing the geometrical data needed for outputting an .data LAMMPS file
     and the method __str__ that outputs the contents of the .data file as a string.
     """
-    def __init__(self,crystalstructure,string):
+    def __init__(self,crystalstructure,string,pottype=""):
         GeometryOutputFile.__init__(self,crystalstructure,string)
         # To be put on the second line
         self.programdoc = ""
+        self.pottype = pottype
     def __str__(self):
         filestring = ""
         filestring += "#"+self.docstring+"\n\n"
@@ -7173,12 +7174,186 @@ class LAMMPSFile(GeometryOutputFile):
                 t = Vector(mvmult3(lv,b.position))
                 atomType = str(b).split()[0]
                 atomTypeId = atomTypes[atomType]
-                if self.lammps_type == "charge":
+                if self.pottype == "ReaxFF" or self.pottype == "" or self.pottype == "COMP3":
                     filestring += str(nextAtomId)+" "+str(atomTypeId)+" 0.0 "+str(t)+"\n"
                 else:
                     filestring += str(nextAtomId)+" "+str(atomTypeId)+" "+str(t)+"\n"
                 nextAtomId += 1
         return filestring
+
+class INLMPFile:
+    """
+    Class for representing and outputting a INLMP file for Lammps.
+    """
+    def __init__(self, crystalstructure, docstring="", potcardir="", prioritylist="", dt=0.25,
+                 pottype="", runtype=""):
+        self.cell = crystalstructure
+        self.docstring = "# "+docstring.lstrip("#").rstrip("\n")+"\n"
+        self.dt = dt
+        self.pottype = pottype
+        self.runtype = runtype
+        self.filename = ""
+        # we need the potcar directory
+        if potcardir != "":
+            self.potcardir = potcardir
+        else:
+            try:
+                self.potcardir = os.environ['LAMMPS_POTLIB']
+            except:
+                try:
+                    self.potcardir = os.environ['GULP_POTLIB']
+                except:
+                    self.potcardir = ""
+        if prioritylist != "":
+            self.prioritylist = prioritylist
+        else:
+            pass
+    def __str__(self):
+        tmp = self.docstring
+        tmp += "\n"
+        tmp += "#-------------------- Initialization -----------------------------------------------------\n"
+        tmp += "clear \n"
+        tmp += "echo both      # echoes each input script command to both log file and screen \n"
+        tmp += "\n"
+        if self.pottype == "ReaxFF" or self.pottype == "":
+            tmp += "units real     # determines units of all quantities used in the input file \n"
+        else:
+            tmp += "units metal    # eV,atomic charge,angstroms,ps,kelvin,bars,g/mol \n"
+        tmp += "dimension 3 \n"
+        tmp += "boundary p p p # periodic boundary condition \n"
+        tmp += "\n"
+        if self.pottype == "ReaxFF" or self.pottype == "" or self.pottype == "COMP3":
+            tmp += "atom_style charge \n"
+        else:
+            tmp += "atom_style atomic \n"
+        tmp += "read_data " + self.filename + "\n"
+        tmp += "\n"
+        tmp += "#replicate 1 1 1 \n"
+        tmp += "\n"
+        #
+        elements = ""
+        elements_string = "variable elem string \""
+        matomTypes = {}
+        mnextAtomTypeId = 1
+        for a in self.cell.atomdata:
+            for b in a:
+                sp_b = b.spcstring()
+                matomType = str(b).split()[0]
+                if not matomType in matomTypes:
+                    #tmp += str(mnextAtomTypeId)+" "+str(ed.elementweight[sp_b])+" # "+str(sp_b)+"\n"
+                    elements += str(sp_b)
+                    if mnextAtomTypeId != 1:
+                      elements_string += " " + str(sp_b)
+                    else:
+                      elements_string += str(sp_b)
+                    matomTypes[matomType] = mnextAtomTypeId
+                    mnextAtomTypeId += 1
+        tmp += elements_string + "\"\n"
+        #
+        tmp += "\n"
+        tmp += "#-------------------- Force field --------------------------------------------------------\n"
+        if self.pottype == "ReaxFF" or self.pottype == "":
+            tmp += "pair_style reax/c NULL \n"
+            tmp += "pair_coeff * * ffield.reax ${elem} \n"
+            tmp += "\n"
+            tmp += "fix q1 all qeq/reax 1 0.0 10.0 1e-6 reax/c \n"
+            tmp += "\n"
+        elif self.pottype == "MEAM":
+            tmp += "pair_style meam/c \n"
+            tmp += "pair_coeff * * "+str(elements)+".library.meam ${elem} "+str(elements)+".meam ${elem}"
+            tmp += "\n"
+        elif self.pottype == "EAM":
+            tmp += "#pair_style eam/alloy # e.g., Generate on Fortran code by Dr. Zhou (2004)\n"
+            tmp += "#pair_coeff * * "+str(elements)+"_zhou04.eam.alloy ${elem} # specifies the potential file used \n"
+            tmp += "\n"
+        elif self.pottype == "FS":
+            tmp += "pair_style eam/fs    # e.g., Generate on potfit code \n"
+            tmp += "pair_coeff * * "+str(elements)+".eam.fs ${elem} # specifies the potential file used \n"
+            tmp += "\n"
+        elif self.pottype == "ADP":
+            tmp += "pair_style adp # ADP(Angular Dependent Potential) \n"
+            tmp += "pair_coeff * * "+str(elements)+".adp.txt ${elem}"
+            tmp += "\n"
+        elif self.pottype == "COMP3":
+            tmp += "pair_style comb3 polar_off \n"
+            tmp += "pair_coeff * * ffield.comb3."+str(elements)+" ${elem} \n"
+            tmp += "\n"
+            tmp += "fix q1 all qeq/comb 10 1.0e-3 \n"
+            tmp += ""
+            tmp += "\n"
+        elif self.pottype == "AIREBO":
+            tmp += "pair_style airebo 3.0 1 0 \n"
+            tmp += "pair_coeff * * CH.airebo ${elem}"
+            tmp += "\n"
+        elif self.pottype == "Tersoff":
+            tmp += "pair_style tersoff \n"
+            tmp += "pair_coeff * * "+str(elements)+".tersoff ${elem} \n"
+            tmp += "\n"
+        elif self.pottype == "SW":
+            tmp += "pair_style sw \n"
+            tmp += "pair_coeff * * "+str(elements)+".sw ${elem} \n"
+            tmp += "\n"
+        #
+        tmp += "\n"
+        tmp += "#-------------------- Energy Minimization ------------------------------------------------\n"
+        tmp += "# 0 [K], structure optimization \n"
+        tmp += "minimize 1.0e-4 1.0e-6 100 1000 # Normal case \n"
+        tmp += "# minimize 0.0 1.0e-8 1000 100000 # More accurate case \n"
+        #
+        tmp += "\n"
+        tmp += "#-------------------- Settings -----------------------------------------------------------\n"
+        tmp += "reset_timestep 0 \n"
+        tmp += "\n"
+        if self.pottype == "ReaxFF" or self.pottype == "":
+            tmp += "timestep 0.25   # 0.25 [fs], sets the timestep for subsequent simulations \n"
+        elif self.pottype == "AIREBO":
+            tmp += "timestep 0.0001 # 0.1 [fs], sets the timestep for subsequent simulations \n"
+        else:
+            tmp += "timestep 0.001  # 1.0 [fs], sets the timestep for subsequent simulations \n"
+        tmp += "\n"
+        tmp += "thermo 100 # computes and prints thermodynamic \n"
+        tmp += "thermo_style custom step temp vol press etotal # specifies content of thermodynamic data to be printed in screen \n"
+        #
+        tmp += "\n"
+        tmp += "#---------- output file settings -----------------------------------------------\n"
+        if self.pottype == "ReaxFF" or self.pottype == "" or self.pottype == "COMP3":
+            tmp += "dump d1 all cfg 100 cfg/run.*.cfg mass type xs ys zs id type q vx vy vz fx fy fz \n"
+        else:
+            tmp += "dump d1 all cfg 100 cfg/run.*.cfg mass type xs ys zs id type vx vy vz fx fy fz \n"
+        tmp += "dump_modify d1 element ${elem} \n"
+        tmp += "#-------------------------------------------------------------------------------\n"
+        #
+        tmp += "\n"
+        tmp += "velocity all create 300 873847 rot yes mom yes dist gaussian # sets the velocity of a group of atoms \n"
+        #
+        tmp += "\n"
+        tmp += "#-------------------- Run the simulation -------------------------------------------------\n"
+        if self.runtype == "ann" or self.runtype == "":
+            tmp += "# Annealing Simulation \n"
+            tmp += "fix 1 all npt temp 100 100 0.1 iso 0 0 0.1 # temp and pressure conserved \n"
+            tmp += "run 1000 # program is run for 1000 iterations \n"
+            tmp += "unfix 1"
+            tmp += "\n"
+        elif self.runtype == "ten":
+            tmp += "# Tensile Simulation \n"
+            tmp += "\n"
+        elif self.runtype == "com":
+            tmp += "# Compression Simulation \n"
+            tmp += "\n"
+        elif self.runtype == "dif":
+            tmp += "# Diffusion Simulation \n"
+            tmp += "\n"
+        elif self.runtype == "mc":
+            tmp += "# Monte Carlo Simulation \n"
+            tmp += "\n"
+        #
+        tmp += "\n"
+        tmp += "#-------------------- Output data file ---------------------------------------------------\n"
+        tmp += "write_data output.dat \n"
+        tmp += "\n"
+        tmp += "#-------------------- End ----------------------------------------------------------------\n"
+        #
+        return tmp
 
 ################################################################################################
 class FdmnesFile(GeometryOutputFile):
