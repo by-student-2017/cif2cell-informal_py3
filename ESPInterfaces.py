@@ -7344,15 +7344,22 @@ class INLMPFile:
         tmp += "#-------------------- Settings -----------------------------------------------------------\n"
         tmp += "reset_timestep 0 \n"
         tmp += "\n"
-        if self.pottype == "ReaxFF" or self.pottype == "":
-            tmp += "timestep 0.25   # 0.25 [fs], sets the timestep for subsequent simulations \n"
-            dt = 0.25
-        elif self.pottype == "AIREBO":
-            tmp += "timestep 0.0001 # 0.1 [fs], sets the timestep for subsequent simulations \n"
-            dt = 0.10
+        if self.dt == 0.25:
+            if self.pottype == "ReaxFF" or self.pottype == "":
+                tmp += "timestep 0.25   # 0.25 [fs], sets the timestep for subsequent simulations \n"
+                dt = 0.25
+            elif self.pottype == "AIREBO":
+                tmp += "timestep 0.0001 # 0.1 [fs], sets the timestep for subsequent simulations \n"
+                dt = 0.10
+            else:
+                tmp += "timestep 0.001  # 1.0 [fs], sets the timestep for subsequent simulations \n"
+                dt = 1.00
         else:
-            tmp += "timestep 0.001  # 1.0 [fs], sets the timestep for subsequent simulations \n"
-            dt = 1.00
+            if self.pottype == "ReaxFF" or self.pottype == "":
+                tmp += "timestep "+str(self.dt)+" # [fs] for real unit \n"
+            else:
+                tmp += "timestep "+str(self.dt)+" # [ps] for metal unit \n"
+            dt = float(self.dt)
         tmp += "\n"
         tmp += "thermo 100 # computes and prints thermodynamic \n"
         tmp += "thermo_style custom step temp vol press etotal # specifies content of thermodynamic data to be printed in screen \n"

@@ -2999,13 +2999,13 @@ if outputprogram == 'lammps':
         # INLMP
         inlmpfile = INLMPFile(cd,docstring=docstring,potcardir=lib,prioritylist=prioritylist,dt=dt,pottype=pottype,runtype=runtype)
         #
-        if options.pressure:
-            inlmpfile.pressure = options.pressure
+        if options.lammps_pressure:
+            inlmpfile.pressure = options.lammps_pressure
         else:
             inlmpfile.pressure = 1.0
         #
-        if options.temperature:
-            inlmpfile.temperature = options.temperature
+        if options.lammps_temperature:
+            inlmpfile.temperature = options.lammps_temperature
         else:
             inlmpfile.temperature = 300.0
         #
