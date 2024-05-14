@@ -239,7 +239,7 @@ Details of cif2cell-informal
 *	Lammps
 
 
-	cif2cell -p lammps --no-reduce --setup-all --lammps-pottype=ReaxFF --lammps-dt=0.25 --lammps-runtype=ann --lammps-temperature=300 --lammps-pressure=1.0 --lammps-rdf=yes -f *.cif
+	cif2cell -p lammps --no-reduce --setup-all --lammps-pottype=ReaxFF --lammps-dt=0.25 --lammps-runtype=ann --lammps-temperature=300 --lammps-pressure=1.0 --lammps-Nsteps=4000 --lammps-rdf=yes -f *.cif
 
 
 *	MOPAC

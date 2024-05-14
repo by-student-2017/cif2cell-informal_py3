@@ -7225,12 +7225,12 @@ class INLMPFile:
         tmp += "\n"
         if self.Nsteps == 0.0:
             if self.pottype == "ReaxFF" or self.pottype == "":
-                Nstep = 4000
+                Nsteps = 4000
             else:
-                Nstep = 20000
+                Nsteps = 20000
         else:
-            Nstep = self.Nsteps
-        tmp += "variable   Nsteps equal %8d # Number of simulation cycles \n"%int(Nstep)
+            Nsteps = self.Nsteps
+        tmp += "variable   Nsteps equal %8d # Number of simulation cycles \n"%int(Nsteps)
         tmp += "\n"
         if self.runtype == "ten" or self.runtype == "com":
             tmp += "variable  es_rate equal    0.1 # engineering strain rate (1/time units) \n"
@@ -7358,10 +7358,10 @@ class INLMPFile:
                 dt = 0.25
             elif self.pottype == "AIREBO":
                 tmp += "timestep 0.0001 # 0.1 [fs], sets the timestep for subsequent simulations \n"
-                dt = 0.10
+                dt = 0.0001
             else:
                 tmp += "timestep 0.001  # 1.0 [fs], sets the timestep for subsequent simulations \n"
-                dt = 1.00
+                dt = 0.001
         else:
             if self.pottype == "ReaxFF" or self.pottype == "":
                 tmp += "timestep "+str(self.dt)+" # [fs] for real unit \n"
@@ -7390,21 +7390,25 @@ class INLMPFile:
         #
         tmp += "#-------------------- Run the simulation -------------------------------------------------\n"
         if self.runtype == "ann" or self.runtype == "":
+            if self.pottype == "ReaxFF" or self.pottype == "":
+               df = 1000.0
+            else:
+               df = 1.0
             tmp += "# Annealing Simulation \n"
             tmp += "\n"
             tmp += "# Heating and pressure process \n"
             tmp += "fix f1 all npt temp 298.15 ${Tdesird} $(100.0*dt) iso 1.0 ${Pdesird} $(1000.0*dt) \n"
-            tmp += "run ${Nsteps} # program is run for Nsteps iterations (Note: dt*${Nsteps}/1000 = %6.2f [ps])\n"%(dt*4000/1000)
+            tmp += "run ${Nsteps} # program is run for Nsteps iterations (Note: dt*${Nsteps}/%d = %6.2f [ps])\n"%(df,dt*Nsteps/df)
             tmp += "unfix f1 \n"
             tmp += "\n"
             tmp += "# Heat retention \n"
             tmp += "fix f2 all nvt temp ${Tdesird} ${Tdesird} $(100.0*dt) \n"
-            tmp += "run ${Nsteps} # program is run for Nsteps iterations (Note: dt*${Nsteps}/1000 = %6.2f [ps])\n"%(dt*4000/1000)
+            tmp += "run ${Nsteps} # program is run for Nsteps iterations (Note: dt*${Nsteps}/%d = %6.2f [ps])\n"%(df,dt*Nsteps/df)
             tmp += "unfix f2 \n"
             tmp += "\n"
             tmp += "# Cooling and depressurization process \n"
             tmp += "fix f3 all npt temp ${Tdesird} 298.15 $(100.0*dt) iso ${Pdesird} 1.0 $(1000.0*dt) \n"
-            tmp += "run ${Nsteps} # program is run for Nsteps iterations (Note: dt*${Nsteps}/1000 = %6.2f [ps])\n"%(dt*4000/1000)
+            tmp += "run ${Nsteps} # program is run for Nsteps iterations (Note: dt*${Nsteps}/%d = %6.2f [ps])\n"%(df,dt*Nsteps/df)
             tmp += "unfix f3 \n"
             tmp += "\n"
         #
@@ -7419,7 +7423,7 @@ class INLMPFile:
                 tmp += "# ----- \n"
             tmp += "\n"
             tmp += "fix f"+str(natom+1)+" all nvt temp ${Tdesird} ${Tdesird} $(100.0*dt) \n"
-            tmp += "run ${Nsteps} # program is run for Nsteps iterations (Note: dt*${Nsteps}/1000 = %6.2f [ps])\n"%(dt*4000/1000)
+            tmp += "run ${Nsteps} # program is run for Nsteps iterations (Note: dt*${Nsteps}/%d = %6.2f [ps])\n"%(df,dt*Nsteps/df)
             tmp += "unfix f"+str(natom+1)+" \n"
             tmp += "\n"
         #
@@ -7464,7 +7468,7 @@ class INLMPFile:
             tmp += "fix 3 all temp/rescale 10 ${Tdesird} ${Tdesird} 0.05 1.0 \n"
             tmp += "\n"
             tmp += "# number of iterations is given so as to give 40% strain to the material \n"
-            tmp += "run ${Nsteps} # program is run for Nsteps iterations (Note: dt*${Nsteps}/1000 = %6.2f [ps])\n"%(dt*4000/1000)
+            tmp += "run ${Nsteps} # program is run for Nsteps iterations (Note: dt*${Nsteps}/%d = %6.2f [ps])\n"%(df,dt*Nsteps/df)
             tmp += "\n"
             #
             tmp += "#-------------------------------------------------------------------------------- \n"
@@ -7498,7 +7502,7 @@ class INLMPFile:
             tmp += "\n"
             tmp += "# Sets NVT and Run NVT + RDF calculations \n"
             tmp += "fix f2 all nvt temp ${Tdesird} ${Tdesird} $(100.0*dt) \n"
-            tmp += "run ${Nsteps} # program is run for Nsteps iterations (Note: dt*${Nsteps}/1000 = %6.2f [ps])\n"%(dt*4000/1000)
+            tmp += "run ${Nsteps} # program is run for Nsteps iterations (Note: dt*${Nsteps}/%d = %6.2f [ps])\n"%(df,dt*Nsteps/df)
             tmp += "unfix f2 \n"
             tmp += "\n"
         #
