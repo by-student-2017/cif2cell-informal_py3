@@ -7263,13 +7263,14 @@ class INLMPFile:
         mc_element = ""
         matomTypes = {}
         satomTypes = {}
+        watomTypes = {}
         mnextAtomTypeId = 1
         for a in self.cell.atomdata:
             for b in a:
                 sp_b = b.spcstring()
                 matomType = str(b).split()[0]
                 if not matomType in matomTypes:
-                    #tmp += str(mnextAtomTypeId)+" "+str(ed.elementweight[sp_b])+" # "+str(sp_b)+"\n"
+                    #tmp += "#mass "+str(mnextAtomTypeId)+" "+str(ed.elementweight[sp_b])+" # "+str(sp_b)+"\n"
                     elements += str(sp_b)
                     if mnextAtomTypeId != 1:
                       elements_string += " " + str(sp_b)
@@ -7279,6 +7280,7 @@ class INLMPFile:
                       mc_element += str(mnextAtomTypeId)+":"+str(sp_b)
                     matomTypes[matomType] = mnextAtomTypeId
                     satomTypes[mnextAtomTypeId] = str(sp_b)
+                    watomTypes[mnextAtomTypeId] = ed.elementweight[sp_b]
                     mnextAtomTypeId += 1
         tmp += elements_string + "\"\n"
         #
@@ -7351,6 +7353,11 @@ class INLMPFile:
         tmp += "#-------------------- Settings -----------------------------------------------------------\n"
         tmp += "reset_timestep 0 \n"
         tmp += "\n"
+        for atom1 in range(1,mnextAtomTypeId):
+            for atom2 in range(1,atom1):
+                tmp += "fix mc"+str(atom1)+str(atom2)+" all atom/swap 1 1 12345 ${MC_temp} ke no types "+str(atom1)+" "+str(atom2)+" \n"
+                #tmp += str(watomTypes[atom1])+", "+str(watomTypes[atom2])+" \n"
+        #
         if self.dt == 0.25:
             if self.pottype == "ReaxFF" or self.pottype == "":
                 tmp += "timestep 0.25   # 0.25 [fs], sets the timestep for subsequent simulations \n"
@@ -7369,6 +7376,14 @@ class INLMPFile:
                 tmp += "# Note: Convert [fs] to [ps] region. \n"
                 tmp += "timestep "+str(float(self.dt)/1000)+" # [ps] for metal unit = "+str(self.dt)+" [fs] \n"
                 dt = float(self.dt)/1000
+        tmp += "#-------------------- \n"
+        tmp += "#Note: 10 [fs] = about 3335.6 [cm^-1] (C-H, O-H or N-H stretching vibration) \n"
+        tmp += "#Setting dt = 1 [fs] corresponds to dividing the period of these vibrations into 10. \n"
+        tmp += "#For systems consisting of heavy elements, a larger dt can be set by estimating from the reduced mass. \n"
+        tmp += "#However, 1 [fs] is usually selected except for ReaxFF and AIREBO. \n"
+        tmp += "#Theoretically, AIREBO is said to be good at 0.01 [fs], but this is a difficult calculation, \n"
+        tmp += "# so in reality it is calculated at 0.1 [fs]. It's good to remember this.\n"
+        tmp += "#-------------------- \n"
         tmp += "\n"
         tmp += "thermo 100 # computes and prints thermodynamic \n"
         tmp += "thermo_style custom step temp vol press etotal # specifies content of thermodynamic data to be printed in screen \n"
