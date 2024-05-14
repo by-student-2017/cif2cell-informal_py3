@@ -7414,17 +7414,17 @@ class INLMPFile:
                df = 1.0
             tmp += "# Annealing Simulation \n"
             tmp += "\n"
-            tmp += "# Heating and pressure process \n"
+            tmp += "# Heating and pressure process (>= 4 [ps] (%d steps) recommended) \n"%(4.0*df/dt)
             tmp += "fix f1 all npt temp 298.15 ${Tdesird} $(100.0*dt) iso 1.0 ${Pdesird} $(1000.0*dt) \n"
             tmp += "run ${Nsteps} # program is run for Nsteps iterations (Note: dt*${Nsteps}/%d = %6.2f [ps])\n"%(df,dt*Nsteps/df)
             tmp += "unfix f1 \n"
             tmp += "\n"
-            tmp += "# Heat retention \n"
+            tmp += "# Heat retention (>= 16 [ps] (%d steps) recommended) \n"%(16.0*df/dt)
             tmp += "fix f2 all nvt temp ${Tdesird} ${Tdesird} $(100.0*dt) \n"
             tmp += "run ${Nsteps} # program is run for Nsteps iterations (Note: dt*${Nsteps}/%d = %6.2f [ps])\n"%(df,dt*Nsteps/df)
             tmp += "unfix f2 \n"
             tmp += "\n"
-            tmp += "# Cooling and depressurization process \n"
+            tmp += "# Cooling and depressurization process (>= 8 [ps] (%d steps) recommended) \n"%(8.0*df/dt)
             tmp += "fix f3 all npt temp ${Tdesird} 298.15 $(100.0*dt) iso ${Pdesird} 1.0 $(1000.0*dt) \n"
             tmp += "run ${Nsteps} # program is run for Nsteps iterations (Note: dt*${Nsteps}/%d = %6.2f [ps])\n"%(df,dt*Nsteps/df)
             tmp += "unfix f3 \n"
