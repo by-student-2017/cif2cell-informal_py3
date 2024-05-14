@@ -7373,23 +7373,29 @@ class INLMPFile:
                 if float(self.temperature) >= 1251.0:
                     tmp += "timestep 0.1 # 0.1 [fs], sets the timestep for subsequent simulations \n"
                     dt = 0.1
+                    Nout = 100
                 else:
                     tmp += "timestep 0.25 # 0.25 [fs], sets the timestep for subsequent simulations \n"
                     dt = 0.25
+                    Nout = 100
             elif self.pottype == "AIREBO":
                 tmp += "timestep 0.0001 # 0.1 [fs], sets the timestep for subsequent simulations \n"
                 dt = 0.0001
+                Nout = 1000
             else:
                 tmp += "timestep 0.001 # 1.0 [fs], sets the timestep for subsequent simulations \n"
                 dt = 0.001
+                Nout = 1000
         else:
             if self.pottype == "ReaxFF" or self.pottype == "":
                 tmp += "timestep "+str(self.dt)+" # [fs] for real unit \n"
                 dt = float(self.dt)
+                Nout = 100
             else:
                 tmp += "# Note: Convert [fs] to [ps] region. \n"
                 tmp += "timestep "+str(float(self.dt)/1000)+" # [ps] for metal unit = "+str(self.dt)+" [fs] \n"
                 dt = float(self.dt)/1000
+                Nout = 1000
         tmp += "#-------------------- \n"
         tmp += "#Note: 10 [fs] = about 3335.6 [cm^-1] (This corresponds to C-H, O-H or N-H stretching vibration, etc) \n"
         tmp += "#Setting dt = 1 [fs] corresponds to dividing the period of these vibrations into 10. \n"
@@ -7407,15 +7413,15 @@ class INLMPFile:
         tmp += "# dt = %f*min(sqrt(RM)) \n"%(dt)
         tmp += "#-------------------- \n"
         tmp += "\n"
-        tmp += "thermo 100 # computes and prints thermodynamic \n"
+        tmp += "thermo %d # computes and prints thermodynamic \n"%(Nout)
         tmp += "thermo_style custom step temp vol press etotal # specifies content of thermodynamic data to be printed in screen \n"
         #
         tmp += "\n"
         tmp += "#---------- output file settings -----------------------------------------------\n"
         if self.pottype == "ReaxFF" or self.pottype == "" or self.pottype == "COMP3":
-            tmp += "dump d1 all cfg 100 cfg/run.*.cfg mass type xs ys zs id type q vx vy vz fx fy fz \n"
+            tmp += "dump d1 all cfg %d cfg/run.*.cfg mass type xs ys zs id type q vx vy vz fx fy fz \n"%(Nout)
         else:
-            tmp += "dump d1 all cfg 100 cfg/run.*.cfg mass type xs ys zs id type vx vy vz fx fy fz \n"
+            tmp += "dump d1 all cfg %d cfg/run.*.cfg mass type xs ys zs id type vx vy vz fx fy fz \n"%(Nout)
         tmp += "dump_modify d1 element ${elem} \n"
         tmp += "#-------------------------------------------------------------------------------\n"
         #
@@ -7487,7 +7493,7 @@ class INLMPFile:
             tmp += "fix fo1 all ave/time 1 3 3 c_2 v_strain v_stress v_stress_GPa v_p2 file stress_vs_strain.txt \n"
             tmp += "#---------------------------------------------------\n"
             tmp += "undump d1 \n"
-            tmp += "dump        d2 all cfg 100 cfg/run.*.cfg mass type xs ys zs id type vx vy vz fx fy fz c_kea \n"
+            tmp += "dump        d2 all cfg %d cfg/run.*.cfg mass type xs ys zs id type vx vy vz fx fy fz c_kea \n"%(Nout)
             tmp += "dump_modify d2 element ${elem} \n"
             tmp += "#---------------------------------------------------\n"
             tmp += "\n"
