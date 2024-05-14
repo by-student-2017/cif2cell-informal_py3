@@ -7343,14 +7343,25 @@ class INLMPFile:
         tmp += "#-------------------- \n"
         tmp += "\n"
         #
+        if self.runtype == "tfmc":
+            tmp += "#-------------------- The time-stamped force-bias Monte Carlo (tfMC) algorithm -----------\n"
+            tmp += "fix f1 all tfmc 0.1 ${Tdesird} 12345 com 1 1 1 rot \n"
+            tmp += "run ${Nsteps} \n"
+            tmp += "unfix f1 \n"
+            tmp += "\n"
+            tmp += "#-------------------- \n"
+            tmp += "#Note: An example of a typical use case would be the modelling of chemical vapor deposition (CVD) processes on a surface \n"
+            tmp += "#-------------------- \n"
+            tmp += "\n"
+        #
         if self.runtype == "mc":
             tmp += "#-------------------- Monte Carlo swaps  -------------------------------------------------\n"
             if (mnextAtomTypeId-1) != 1:
                 tmp += "# Memo; "+str(mc_element)+"\n"
                 for atom1 in range(1,mnextAtomTypeId):
                     for atom2 in range(1,atom1):
-                        tmp += "fix mc"+str(atom1)+str(atom2)+" all atom/swap 1 1 12345 ${MC_temp} ke no types "+str(atom1)+" "+str(atom2)+" \n"
-                tmp += "run ${MC_Nsteps} \n"
+                        tmp += "fix mc"+str(atom1)+str(atom2)+" all atom/swap 1 1 12345 ${Tdesird} ke no types "+str(atom1)+" "+str(atom2)+" \n"
+                tmp += "run ${Nsteps} \n"
                 for atom1 in range(1,mnextAtomTypeId):
                     for atom2 in range(1,atom1):
                         tmp += "unfix mc"+str(atom1)+str(atom2)+"\n"
