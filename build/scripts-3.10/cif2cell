@@ -281,7 +281,8 @@ progspec.add_option("--lammps-dt",dest="lammps_dt",help="timestep [fs]: dt = 0.2
 progspec.add_option("--lammps-runtype",dest="lammps_runtype",help="Type of calculation: e.g., ann (=Annealing), ten (=Tensile), com (=Compression), msd (=Mean Square Displacement), mc (=Monte Carlo) (default: ann (=Annealing))", metavar="ann")
 progspec.add_option("--lammps-temperature",dest="lammps_temperature",help="output template (input file) for ion move calculation under any temperature (K). (default: 300.0 K)", metavar=300.0)
 progspec.add_option("--lammps-pressure",dest="lammps_pressure",help="output template (input file) for calculation under pressure (Bar)). 1 Bar = 0.001 kBar = 100 kPa = 0.1 MPa. This pressure in NPT (default: 1.0 Bar)", metavar=1.0)
-progspec.add_option("--lammps-rdf",dest="lammps_rdf",help="set RDF (Radial Distribution Function) template. (default: no)", metavar="no")
+progspec.add_option("--lammps-rdf",dest="lammps_rdf",help="Set RDF (Radial Distribution Function) template. (default: no)", metavar="no")
+progspec.add_option("--lammps-Nsteps",dest="lammps_Nsteps",help="This program is run for Nsteps iterations. Since ReaxFF is about 250 times more computationally expensive than other potentials, it is best to keep the number of calculations one to two orders of magnitude smaller than other potentials during testing. (default: 4000 for ReaxFF, 20000 for others)", metavar="4000")
 #
 parser.add_option_group(generalopts)
 parser.add_option_group(cellgenopts)
@@ -3013,6 +3014,11 @@ if outputprogram == 'lammps':
             inlmpfile.rdf = options.lammps_rdf
         else:
             inlmpfile.rdf = "no"
+        #
+        if options.lammps_Nsteps:
+            inlmpfile.Nsteps = options.lammps_Nsteps
+        else:
+            inlmpfile.Nsteps = 0.0
         #
         inlmpfile.filename = outputfile
         f = open("in.lmp", "w")

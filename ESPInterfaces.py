@@ -7196,6 +7196,7 @@ class INLMPFile:
         self.pressure = 1.0
         self.temperature = 300.0
         self.rdf = "no"
+        self.Nsteps = 4000
         # we need the potcar directory
         if potcardir != "":
             self.potcardir = potcardir
@@ -7217,12 +7218,19 @@ class INLMPFile:
         tmp += "#-----------------------------------------------------------------------------------------\n"
         tmp += "# LAMMPS 64-bit 22Dec2022-MSMPI \n"
         tmp += "clear \n"
-        tmp += "echo both      # echoes each input script command to both log file and screen \n"
+        tmp += "echo both # echoes each input script command to both log file and screen \n"
         tmp += "#-------------------- Environment Settings -----------------------------------------------\n"
-        tmp += "variable  Tdesird equal  %-7.2f # Desired Temperature [K] unit \n"%float(self.temperature)
-        tmp += "variable  Pdesird equal  %-7.3f # Desired Pressure [bar] unit (= 100 [kPa] = 0.1 [MPa]) \n"%float(self.pressure)
+        tmp += "variable  Tdesird equal  %7.2f # Desired Temperature [K] unit \n"%float(self.temperature)
+        tmp += "variable  Pdesird equal %8.4f # Desired Pressure [bar] unit (= 100 [kPa] = 0.1 [MPa]) \n"%float(self.pressure)
         tmp += "\n"
-        tmp += "variable   Nsteps equal    4000 # Number of simulation cycles \n"
+        if self.Nsteps == 0.0:
+            if self.pottype == "ReaxFF" or self.pottype == "":
+                Nstep = 4000
+            else:
+                Nstep = 20000
+        else:
+            Nstep = self.Nsteps
+        tmp += "variable   Nsteps equal %8d # Number of simulation cycles \n"%int(Nstep)
         tmp += "\n"
         if self.runtype == "ten" or self.runtype == "com":
             tmp += "variable  es_rate equal    0.1 # engineering strain rate (1/time units) \n"
