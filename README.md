@@ -236,7 +236,7 @@ Details of cif2cell-informal
 	cif2cell -p openmx --openmx-pseudo-libdr=/home/username/openmx3.8/DFT_DATA13/PAO --setup-all -f *.cif
 
 
-*	Lammps (I haven't tested it in actual operation with various options yet. Currently, I would like you to think of in.lmp as a template that can be modified by the user.)
+*	Lammps
 
 
 	cif2cell -p lammps --no-reduce --setup-all --lammps-pottype=ReaxFF --lammps-dt=0.25 --lammps-runtype=ann --lammps-temperature=300 --lammps-pressure=1.0 --lammps-Nsteps=4000 --lammps-rdf=yes --lammps-show-temp=yes -f *.cif
