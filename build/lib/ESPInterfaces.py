@@ -7197,6 +7197,7 @@ class INLMPFile:
         self.temperature = 300.0
         self.rdf = "no"
         self.Nsteps = 4000
+        self.show_temp = "no"
         # we need the potcar directory
         if potcardir != "":
             self.potcardir = potcardir
@@ -7451,13 +7452,45 @@ class INLMPFile:
         tmp += "thermo_style custom step temp vol press etotal # specifies content of thermodynamic data to be printed in screen \n"
         #
         tmp += "\n"
-        tmp += "#---------- output file settings -----------------------------------------------\n"
-        if self.pottype == "ReaxFF" or self.pottype == "" or self.pottype == "COMP3":
-            tmp += "dump d1 all cfg %d cfg/run.*.cfg mass type xs ys zs id type q vx vy vz fx fy fz \n"%(Nout)
+        if self.show_temp == "yes":
+            tmp += "#------------ calculate temperature per particle --------- \n"
+            tmp += "variable kB   equal 1.380650e-23 # Boltzman constant [J/K] \n"
+            tmp += "variable eV2J equal 1.602763e-19 # change [eV] to [J] unit \n"
+            tmp += "compute ke all ke/atom           # The kinetic energy [eV] of each atom \n"
+            tmp += "#-------------------- \n"
+            tmp += "#Ref: variable temp atom c_ke*${eV2J}/(1.5*${kB}) #### T \n"
+            tmp += "variable tempatom atom c_ke*${eV2J}*(2/3)/${kB} # ke = (1/2)*m*v^2 = (3/2)*kB*T, T = ke*(2/3)/kB \n"
+            #
+            if self.pottype == "ReaxFF" or self.pottype == "" or self.pottype == "COMP3":
+                tmp += "#dump d1 all cfg %d cfg/run_temp.*.cfg mass type xs ys zs id type q vx vy vz fx fy fz v_tempatom \n"%(Nout)
+            else:
+                tmp += "#dump d1 all cfg %d cfg/run_temp.*.cfg mass type xs ys zs id type vx vy vz fx fy fz v_tempatom \n"%(Nout)
+            #
+            tmp += "#-------------------- \n"
+            tmp += "fix ave_tempatom all ave/atom 1 %d %d v_tempatom # Average calculation for temperature of each atom \n"%(Nout,Nout)
+            #
+            if self.pottype == "ReaxFF" or self.pottype == "" or self.pottype == "COMP3":
+                tmp += "dump d1 all cfg %d cfg/run_temp.*.cfg mass type xs ys zs id type q vx vy vz fx fy fz f_ave_tempatom \n"%(Nout)
+            else:
+                tmp += "dump d1 all cfg %d cfg/run_temp.*.cfg mass type xs ys zs id type vx vy vz fx fy fz f_ave_tempatom \n"%(Nout)
+            #
+            tmp += "#-------------------- \n"
+            tmp += "dump_modify d1 element ${elem} \n"
+            tmp += "#-------------------- \n"
+            tmp += "# References \n"
+            tmp += "# [1] M. Li et al., Nanomaterials 2019, 9(3), 347; https://doi.org/10.3390/nano9030347 \n"
+            tmp += "# URL: https://www.mdpi.com/2079-4991/9/3/347 \n"
+            tmp += "# Supplementary Materials: https://www.mdpi.com/2079-4991/9/3/347/s1 \n"
+            tmp += "#--------------------------------------------------------- \n"
+            tmp += "\n"
         else:
-            tmp += "dump d1 all cfg %d cfg/run.*.cfg mass type xs ys zs id type vx vy vz fx fy fz \n"%(Nout)
-        tmp += "dump_modify d1 element ${elem} \n"
-        tmp += "#-------------------------------------------------------------------------------\n"
+            tmp += "#---------- output file settings -----------------------------------------------\n"
+            if self.pottype == "ReaxFF" or self.pottype == "" or self.pottype == "COMP3":
+                tmp += "dump d1 all cfg %d cfg/run.*.cfg mass type xs ys zs id type q vx vy vz fx fy fz \n"%(Nout)
+            else:
+                tmp += "dump d1 all cfg %d cfg/run.*.cfg mass type xs ys zs id type vx vy vz fx fy fz \n"%(Nout)
+            tmp += "dump_modify d1 element ${elem} \n"
+            tmp += "#-------------------------------------------------------------------------------\n"
         #
         tmp += "\n"
         tmp += "# sets the velocity of a group of atoms \n"
@@ -7568,6 +7601,31 @@ class INLMPFile:
             tmp += "# metal unit: press = bar = 0.1 MPa, length = Angstrom = 1e-10 m \n"
             tmp += "#-------------------------------------------------------------------------------- \n"
             tmp += "\n"
+        #
+        if self.runtype == "the" or self.runtype == "vis":
+            tmp += "#-------------------- thermal conductivity or viscosity calculation settings -----\n"
+            tmp += "variable  T equal ${Tdesird} \n"
+            tmp += "variable  V equal vol \n"
+            tmp += "variable dt equal %6.4    # [fs] \n"%(dt)
+            tmp += "variable  p equal 400     # correlation length \n"
+            tmp += "variable  s equal 5       # sample interval \n"
+            tmp += "variable  d equal $p*$s   # dump interval \n"
+            tmp += "\n"
+            tmp += "# convert from LAMMPS real units to SI \n"
+            if self.pottype == "ReaxFF" or self.pottype == "":
+                tmp += "# real units case \n"
+                tmp += "variable kB equal 1.3806504e-23    # [J/K] Boltzmann \n"
+                tmp += "variable atm2Pa equal 101325.0 # atm to Pa (pressure) \n"
+                tmp += "variable A2m equal 1.0e-10  # Angstrom to metol (length) \n"
+                tmp += "variable fs2s equal 1.0e-15 # fs to s (time) \n"
+                tmp += "variable convert equal ${atm2Pa}*${atm2Pa}*${fs2s}*${A2m}*${A2m}*${A2m} \n"
+            else:
+                tmp += "# metal units case \n"
+                tmp += "variable kB equal 1.3806504e-23    # [J/K] Boltzmann \n"
+                tmp += "variable bar2Pa equal 100000.0 # bar to Pa (pressure) \n"
+                tmp += "variable A2m equal 1.0e-10  # Angstrom to metol (length) \n"
+                tmp += "variable ps2s equal 1.0e-12 # ps to s (time) \n"
+                tmp += "variable convert equal ${bar2Pa}*${bar2Pa}*${ps2s}*${A2m}*${A2m}*${A2m} \n"
         #
         if self.runtype == "the":
             tmp += "#-------------------- thermal conductivity calculation -----------------------------------\n"

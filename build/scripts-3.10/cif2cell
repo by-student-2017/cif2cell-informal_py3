@@ -283,6 +283,7 @@ progspec.add_option("--lammps-temperature",dest="lammps_temperature",help="outpu
 progspec.add_option("--lammps-pressure",dest="lammps_pressure",help="output template (input file) for calculation under pressure (Bar)). 1 Bar = 0.001 kBar = 100 kPa = 0.1 MPa. This pressure in NPT (default: 1.0 Bar)", metavar=1.0)
 progspec.add_option("--lammps-rdf",dest="lammps_rdf",help="Set RDF (Radial Distribution Function) template. (default: no)", metavar="no")
 progspec.add_option("--lammps-Nsteps",dest="lammps_Nsteps",help="This program is run for Nsteps iterations. Since ReaxFF is about 250 times more computationally expensive than other potentials, it is best to keep the number of calculations one to two orders of magnitude smaller than other potentials during testing. (default: 8000 for ReaxFF, 20000 for others)", metavar="8000")
+progspec.add_option("--lammps-show-temp",dest="lammps_show_temp",help="Display the temperature at each atom. It is determined from the velocity of each atom. (default: no)", metavar="no")
 #
 parser.add_option_group(generalopts)
 parser.add_option_group(cellgenopts)
@@ -3019,6 +3020,11 @@ if outputprogram == 'lammps':
             inlmpfile.Nsteps = options.lammps_Nsteps
         else:
             inlmpfile.Nsteps = 0.0
+        #
+        if options.lammps_show_temp == "yes":
+            inlmpfile.show_temp = options.lammps_show_temp
+        else:
+            inlmpfile.show_temp = "no"
         #
         inlmpfile.filename = outputfile
         f = open("in.lmp", "w")
