@@ -20,10 +20,10 @@ Copyright 2010, Torbjorn Bjorkman
 
 ## LAMMPS Support
 I have added support for LAMMPS .data files with orthogonal and triclinic boxes. To convert a CIF-file to LAMMPS data file, simply run (in this directory)
-* It would be a good idea to use Ovito as well. However, please note that the order of elements in Ovito is easily changed.
 ```
 ./cif2cell /path/to/file.cif --no-reduce -p lammps -o cif_file.data
 ```
+* It would be a good idea to use Ovito as well. However, please note that the order of elements in Ovito is easily changed.
 
 ## CIF2CELL
 
