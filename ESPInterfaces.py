@@ -7191,6 +7191,7 @@ class INLMPFile:
         self.docstring = "# "+docstring.lstrip("#").rstrip("\n")+"\n"
         self.dt = dt
         self.pottype = pottype
+        self.prioritylist = prioritylist
         self.runtype = runtype
         self.filename = ""
         self.pressure = 1.0
@@ -7320,49 +7321,56 @@ class INLMPFile:
                     mnextAtomTypeId += 1
         tmp += elements_string + "\"\n"
         #
+        #Potential address end manipulation.
+        potcardir = self.potcardir
+        if potcardir == "./":
+          potcardir = ""
+        elif potcardir[-1] != "/":
+            potcardir = self.potcardir+"/"
+        #
         tmp += "\n"
         tmp += "#-------------------- Force field --------------------------------------------------------\n"
         if self.pottype == "ReaxFF" or self.pottype == "":
             tmp += "pair_style reax/c NULL \n"
-            tmp += "pair_coeff * * ffield.reax ${elem} \n"
+            tmp += "pair_coeff * * "+str(potcardir)+"ffield.reax ${elem} \n"
             tmp += "\n"
             tmp += "# Handle charges using the QEq method. \n"
             tmp += "fix q1 all qeq/reax 1 0.0 10.0 1e-6 reax/c \n"
             tmp += "\n"
         elif self.pottype == "MEAM":
             tmp += "pair_style meam/c \n"
-            tmp += "pair_coeff * * "+str(elements)+".library.meam ${elem} "+str(elements)+".meam ${elem} \n"
+            tmp += "pair_coeff * * "+str(potcardir)+str(elements)+".library.meam ${elem} "+str(potcardir)+str(elements)+".meam ${elem} \n"
             tmp += "\n"
         elif self.pottype == "EAM":
             tmp += "#pair_style eam/alloy # e.g., Generate on Fortran code by Dr. Zhou (2004) \n"
-            tmp += "#pair_coeff * * "+str(elements)+"_zhou04.eam.alloy ${elem} # specifies the potential file used \n"
+            tmp += "#pair_coeff * * "+str(potcardir)+str(elements)+"_zhou04.eam.alloy ${elem} # specifies the potential file used \n"
             tmp += "\n"
         elif self.pottype == "FS":
             tmp += "pair_style eam/fs    # e.g., Generate on potfit code \n"
-            tmp += "pair_coeff * * "+str(elements)+".eam.fs ${elem} # specifies the potential file used \n"
+            tmp += "pair_coeff * * "+str(potcardir)+str(elements)+".eam.fs ${elem} # specifies the potential file used \n"
             tmp += "\n"
         elif self.pottype == "ADP":
             tmp += "pair_style adp # ADP(Angular Dependent Potential) \n"
-            tmp += "pair_coeff * * "+str(elements)+".adp.txt ${elem} \n"
+            tmp += "pair_coeff * * "+str(potcardir)+str(elements)+".adp.txt ${elem} \n"
             tmp += "\n"
         elif self.pottype == "COMP3":
             tmp += "pair_style comb3 polar_off \n"
-            tmp += "pair_coeff * * ffield.comb3."+str(elements)+" ${elem} \n"
+            tmp += "pair_coeff * * "+str(potcardir)+"ffield.comb3."+str(elements)+" ${elem} \n"
             tmp += "\n"
             tmp += "# Handle charges using the QEq method. \n"
             tmp += "fix q1 all qeq/comb 10 1.0e-3 \n"
             tmp += "\n"
         elif self.pottype == "AIREBO":
             tmp += "pair_style airebo 3.0 1 0 \n"
-            tmp += "pair_coeff * * CH.airebo ${elem} \n"
+            tmp += "pair_coeff * * "+str(potcardir)+"CH.airebo ${elem} \n"
             tmp += "\n"
         elif self.pottype == "Tersoff":
-            tmp += "pair_style tersoff \n"
+            tmp += "pair_style "+str(potcardir)+"tersoff \n"
             tmp += "pair_coeff * * "+str(elements)+".tersoff ${elem} \n"
             tmp += "\n"
         elif self.pottype == "SW":
             tmp += "pair_style sw \n"
-            tmp += "pair_coeff * * "+str(elements)+".sw ${elem} \n"
+            tmp += "pair_coeff * * "+str(potcardir)+str(elements)+".sw ${elem} \n"
             tmp += "\n"
         tmp += "#-------------------- \n"
         tmp += "#Note: ReaxFF and AIREBO are suitable for molecular calculations. \n"

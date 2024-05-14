@@ -276,7 +276,7 @@ progspec.add_option("--fdmnes-eimag",dest="fdmnes_eimag",help="Eimag for Green f
 progspec.add_option("--fdmnes-spherical",dest="fdmnes_spherical",help="show the spherical tensors (in number of electron).",action="store_true")
 progspec.add_option("--fdmnes-edge",dest="fdmnes_edge",help="K, L1, L2, L3, L23, M1, M23, M45, N23, N45, etc. (defaults K).",metavar="K")
 # LAMMPS
-progspec.add_option("--lammps-pottype",dest="lammps_pottype",help="Potential type, e.g. ReaxFF, MEAM, EAM, FS, ADP, COMP3, AIREBO, Tersoff, SW (=Stillinger-Weber) (default: ReaxFF) [Note1: These potentials basically do not take spin into account, so good results are often not obtained in environments where phase transformation occurs.] [Note 2: Lennard-Jones (LJ): FCC structure, Gas adsorption and understanding the phenomenon. BMH: Used in ionic bonding materials such as alkali halides and silicates. The Buckingham potential, which omits the Coulomb interaction energy term and the interaction between the permanent dipole and induced quadrupole in the fourth term, is also often used (see https://www5.hp-ez.com/hp/calculations/page515). vashishta: 3-body term is included.]", metavar="ReaxFF")
+progspec.add_option("--lammps-pottype",dest="lammps_pottype",help="Potential type, e.g. ReaxFF, MEAM, EAM, FS, ADP, COMP3, AIREBO, Tersoff, SW (=Stillinger-Weber) (default: ReaxFF) [Note1: These potentials basically do not take spin into account, so good results are often not obtained in environments where phase transformation occurs.] [Note 2: Lennard-Jones (LJ): FCC structure, Gas adsorption and understanding the phenomenon. BMH: Used in ionic bonding materials such as alkali halides and silicates. The Buckingham potential, which omits the Coulomb interaction energy term and the interaction between the permanent dipole and induced quadrupole in the fourth term, is also often used (see https://www5.hp-ez.com/hp/calculations/page515). vashishta: 3-body term is included.] [Note3: ReaxFF (https://github.com/by-student-2017/lammps_education_reaxff_win/tree/master/potentials), others (https://www.ctcms.nist.gov/potentials/)", metavar="ReaxFF")
 progspec.add_option("--lammps-dt",dest="lammps_dt",help="timestep [fs]: dt = 0.25 (ReaxFF at 0-1250 K), 0.1 (ReaxFF at 1251-4500 K), 1.0 (MEAM, EAM, FS, ADP, COMP3, Tersoff and SW) or 0.1 (AIREBO). (default: 0.25 [fs])", metavar="0.25")
 progspec.add_option("--lammps-runtype",dest="lammps_runtype",help="Type of calculation: e.g., ann (=Annealing), ten (=Tensile), com (=Compression), msd (=Mean Square Displacement), tfmc (=time-stamped force-bias Monte Carlo), mc (=Monte Carlo), the (=thermal conductivity), vis (=viscosity) (default: ann (=Annealing))", metavar="ann")
 progspec.add_option("--lammps-temperature",dest="lammps_temperature",help="output template (input file) for ion move calculation under any temperature (K). (default: 300.0 K)", metavar=300.0)
@@ -284,6 +284,8 @@ progspec.add_option("--lammps-pressure",dest="lammps_pressure",help="output temp
 progspec.add_option("--lammps-rdf",dest="lammps_rdf",help="Set RDF (Radial Distribution Function) template. (default: no)", metavar="no")
 progspec.add_option("--lammps-Nsteps",dest="lammps_Nsteps",help="This program is run for Nsteps iterations. Since ReaxFF is about 250 times more computationally expensive than other potentials, it is best to keep the number of calculations one to two orders of magnitude smaller than other potentials during testing. (default: 8000 for ReaxFF, 20000 for others)", metavar="8000")
 progspec.add_option("--lammps-show-temp",dest="lammps_show_temp",help="Display the temperature at each atom. It is determined from the velocity of each atom. (default: no)", metavar="no")
+progspec.add_option("--lammps-pot-lib",dest="lammps_pot_lib",help="Path to the LAMMPS potential library. Also settable by the LAMMPS_POTLIB environment variable.")
+progspec.add_option("--lammps-pot-pri",dest="lammps_pot_priority",help="(Unimplemented) Set the priority of different potentials by a list of suffixes. Also available via the LAMMPS_POT_PRIORITY environment variable. e.g., get ffield.reax.2024XY.CHOSiLiF from (https://github.com/by-student-2017/lammps_education_reaxff_win/tree/master/potentials).", metavar='"2024X,2023X,2022X,2021X,2020X"')
 #
 parser.add_option_group(generalopts)
 parser.add_option_group(cellgenopts)
@@ -2962,22 +2964,22 @@ if outputprogram == 'lammps':
         f.close()
     else:
         # POTCAR
-        if options.vasppseudolib:
-            lib = options.vasppseudolib
+        if options.lammps_pot_lib:
+            lib = options.lammps_pot_lib
         else:
             lib = ""
         # Make selection of potcars
-        if options.vasppppriority:
-            prioritylist = options.vasppppriority.split(",")
+        if options.lammps_pot_priority:
+            prioritylist = options.lammps_pot_priority.split(",")
             prioritylist.append("")
             print(prioritylist)
         else:
             try:
-                pl = os.environ['VASP_PP_PRIORITY']
+                pl = os.environ['LAMMPS_POT_PRIORITY']
                 prioritylist = pl.split(",")
                 prioritylist.append("")
             except:
-                prioritylist=["_d","_pv","_sv","","_h","_s"]
+                prioritylist=["2024X","2023X","2022X","2021X","2020X"]
         #
         # The second comment line with info from the CIF file 
         docstring =  "Generated by "+programname+" "+version
