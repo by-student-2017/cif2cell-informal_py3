@@ -7569,6 +7569,13 @@ class INLMPFile:
             tmp += "#-------------------------------------------------------------------------------- \n"
             tmp += "\n"
         #
+        if self.runtype == "the":
+            tmp += "#-------------------- thermal conductivity calculation -----------------------------------\n"
+            tmp += "\n"
+        if self.runtype == "vis":
+            tmp += "#-------------------- viscosity calculation ----------------------------------------------\n"
+            tmp += "\n"
+        #
         if self.rdf == "yes":
             tmp += "#-------------------- Output data (RDF)---------------------------------------------------\n"
             tmp += "# calculates the radial distribution function (RDF) and output file \n"
