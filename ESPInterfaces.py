@@ -7225,7 +7225,7 @@ class INLMPFile:
         tmp += "\n"
         if self.Nsteps == 0.0:
             if self.pottype == "ReaxFF" or self.pottype == "":
-                Nsteps = 4000
+                Nsteps = 8000
             else:
                 Nsteps = 20000
         else:
