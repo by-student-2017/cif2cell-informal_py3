@@ -7293,10 +7293,10 @@ class INLMPFile:
             tmp += "\n"
         elif self.pottype == "MEAM":
             tmp += "pair_style meam/c \n"
-            tmp += "pair_coeff * * "+str(elements)+".library.meam ${elem} "+str(elements)+".meam ${elem}"
+            tmp += "pair_coeff * * "+str(elements)+".library.meam ${elem} "+str(elements)+".meam ${elem} \n"
             tmp += "\n"
         elif self.pottype == "EAM":
-            tmp += "#pair_style eam/alloy # e.g., Generate on Fortran code by Dr. Zhou (2004)\n"
+            tmp += "#pair_style eam/alloy # e.g., Generate on Fortran code by Dr. Zhou (2004) \n"
             tmp += "#pair_coeff * * "+str(elements)+"_zhou04.eam.alloy ${elem} # specifies the potential file used \n"
             tmp += "\n"
         elif self.pottype == "FS":
@@ -7305,7 +7305,7 @@ class INLMPFile:
             tmp += "\n"
         elif self.pottype == "ADP":
             tmp += "pair_style adp # ADP(Angular Dependent Potential) \n"
-            tmp += "pair_coeff * * "+str(elements)+".adp.txt ${elem}"
+            tmp += "pair_coeff * * "+str(elements)+".adp.txt ${elem} \n"
             tmp += "\n"
         elif self.pottype == "COMP3":
             tmp += "pair_style comb3 polar_off \n"
@@ -7313,11 +7313,10 @@ class INLMPFile:
             tmp += "\n"
             tmp += "# Handle charges using the QEq method. \n"
             tmp += "fix q1 all qeq/comb 10 1.0e-3 \n"
-            tmp += ""
             tmp += "\n"
         elif self.pottype == "AIREBO":
             tmp += "pair_style airebo 3.0 1 0 \n"
-            tmp += "pair_coeff * * CH.airebo ${elem}"
+            tmp += "pair_coeff * * CH.airebo ${elem} \n"
             tmp += "\n"
         elif self.pottype == "Tersoff":
             tmp += "pair_style tersoff \n"
