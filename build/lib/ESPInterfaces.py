@@ -7384,7 +7384,8 @@ class INLMPFile:
         tmp += "# (unless otherwise specified, NNs also do not explicitly consider electric charges in their formulas). \n"
         tmp += "# Therefore, it must be remembered that NNs cannot deal with external magnetism or voltage. \n"
         tmp += "#-------------------- \n"
-        tmp += "#Note: If you want to apply voltage: ReaxFF, COMP3, DFTB+ code and ESM-RISM (QE, OpenMX, etc) \n"
+        tmp += "#Note: If you want to apply voltage: ReaxFF, COMP3, DFTBP (DFTB+) and ESM-RISM (QE, OpenMX, etc) \n"
+        tmp += "# I think we need to rewrite the charge part a little in DFTBP. \n"
         tmp += "#-------------------- \n"
         tmp += "\n"
         #
