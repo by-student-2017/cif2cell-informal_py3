@@ -7232,11 +7232,33 @@ class INLMPFile:
             Nsteps = self.Nsteps
         tmp += "variable   Nsteps equal %8d # Number of simulation cycles \n"%int(Nsteps)
         tmp += "\n"
-        if self.runtype == "ten" or self.runtype == "com":
+        #
+        if self.pottype == "ReaxFF" or self.pottype == "":
+            df = 1000.0
+        else:
+            df = 1.0
+        #
+        if self.runtype == "ten":
+            dt_es = 0.001*df
+            tmp += "variable    dt_es equal  %7.4f # [fs] \n"%(dt_es)
+            es_rate = 0.1
             tmp += "variable  es_rate equal    0.1 # engineering strain rate (1/time units) \n"
-            tmp += "# Note: es_rate/dt = 0.1 / (1e-15) = 1.0e13 [1/s] \n"
+            tmp += "#-------------------- \n"
+            tmp += "# Note: es_rate/dt_es = 0.1 / (1e-15) = 1.0e13 [1/s] \n"
             tmp += "# L(t) = L(0)*(1 + es_rate*dt*step) \n"
-            tmp += "# strain [%] = es_rate*dt*Nstep*100 [%] = 0.1 * 0.001 * 4000 * 100 = 40 [%] \n"
+            tmp += "# strain [%] = es_rate*dt*Nstep*100 [%] = "+"%4.1f"%(es_rate*dt_es*Nsteps*100)+" [%] \n"
+            tmp += "#-------------------- \n"
+            tmp += "\n"
+        if self.runtype == "com":
+            dt_es = 0.001*df
+            tmp += "variable    dt_es equal  %7.4f # [fs] \n"%(dt_es)
+            es_rate = -0.04
+            tmp += "variable  es_rate equal  -0.04 # engineering strain rate (1/time units) (Negative value for compression) \n"
+            tmp += "#-------------------- \n"
+            tmp += "# Note: es_rate/dt_es = -0.04 / (1e-15) = -4.0e12 [1/s] \n"
+            tmp += "# L(t) = L(0)*(1 + es_rate*dt*step) \n"
+            tmp += "# strain [%] = es_rate*dt*Nstep*100 [%] = "+"%4.1f"%(es_rate*dt_es*Nsteps*100)+" [%] (Negative value for compression) \n"
+            tmp += "#-------------------- \n"
             tmp += "\n"
         if self.runtype == "mc" or self.runtype == "tfmc":
             tmp += "variable  MC_temp equal %7.2f # Temperature of MC [K] \n"%float(self.temperature)
@@ -7444,10 +7466,6 @@ class INLMPFile:
         #
         tmp += "#-------------------- Run the simulation -------------------------------------------------\n"
         if self.runtype == "ann" or self.runtype == "":
-            if self.pottype == "ReaxFF" or self.pottype == "":
-               df = 1000.0
-            else:
-               df = 1.0
             tmp += "# Annealing Simulation \n"
             tmp += "\n"
             tmp += "# Heating and pressure process (>= 4 [ps] (%d steps) recommended) \n"%(4.0*df/dt)
@@ -7482,6 +7500,7 @@ class INLMPFile:
             tmp += "\n"
         #
         if self.runtype == "ten" or self.runtype == "com":
+            tmp += "dt = ${dt_ex}"
             tmp += "# stress-strain Simulation \n"
             tmp += "compute 1 all stress/atom NULL  # computes the symmetric per-atom stress tensor for each atom in a group. \n"
             tmp += "compute 2 all temp              # computes the temp of a group of atoms \n"
@@ -7510,9 +7529,14 @@ class INLMPFile:
             tmp += "#---------------------------------------------------\n"
             tmp += "\n"
             #
-            tmp += "# Tensile Simulation \n"
+            if self.runtype == "ten":
+                tmp += "# Tensile Simulation \n"
+            elif self.runtype == "com":
+                tmp += "# Compression Simulation \n"
+            else:
+                tmp += "# Tensile or Compression Simulation \n"
             tmp += "#-------------------- Run the simulation -------------------------------------------------\n"
-            tmp += "# strain rate of 0.1 [1/dt] is applied in y direction \n"
+            tmp += "# strain rate of %6.3f [1/dt] is applied in y direction \n"%(es_rate)
             tmp += "fix d1 all deform 1 y erate ${es_rate} \n"
             tmp += "\n"
             tmp += "# all atoms rescaled to new positions while temp and pressure is conserved \n"
@@ -7522,7 +7546,7 @@ class INLMPFile:
             tmp += "fix 3 all temp/rescale 10 ${Tdesird} ${Tdesird} 0.05 1.0 \n"
             tmp += "\n"
             tmp += "# number of iterations is given so as to give 40% strain to the material \n"
-            tmp += "run ${Nsteps} # program is run for Nsteps iterations (Note: dt*${Nsteps}/%d = %6.2f [ps])\n"%(df,dt*Nsteps/df)
+            tmp += "run ${Nsteps} # program is run for Nsteps iterations (Note: dt_es*${Nsteps}/%d = %6.2f [ps])\n"%(df,dt*Nsteps/df)
             tmp += "\n"
             #
             tmp += "#-------------------------------------------------------------------------------- \n"
