@@ -7370,13 +7370,17 @@ class INLMPFile:
         #
         if self.dt == 0.25:
             if self.pottype == "ReaxFF" or self.pottype == "":
-                tmp += "timestep 0.25   # 0.25 [fs], sets the timestep for subsequent simulations \n"
-                dt = 0.25
+                if float(self.temperature) >= 1251.0:
+                    tmp += "timestep 0.1 # 0.1 [fs], sets the timestep for subsequent simulations \n"
+                    dt = 0.1
+                else:
+                    tmp += "timestep 0.25 # 0.25 [fs], sets the timestep for subsequent simulations \n"
+                    dt = 0.25
             elif self.pottype == "AIREBO":
                 tmp += "timestep 0.0001 # 0.1 [fs], sets the timestep for subsequent simulations \n"
                 dt = 0.0001
             else:
-                tmp += "timestep 0.001  # 1.0 [fs], sets the timestep for subsequent simulations \n"
+                tmp += "timestep 0.001 # 1.0 [fs], sets the timestep for subsequent simulations \n"
                 dt = 0.001
         else:
             if self.pottype == "ReaxFF" or self.pottype == "":
