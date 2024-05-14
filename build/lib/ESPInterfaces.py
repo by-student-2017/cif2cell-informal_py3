@@ -7380,13 +7380,13 @@ class INLMPFile:
         tmp += "#Theoretically, AIREBO is said to be good at 0.01 [fs], but this is a difficult calculation, \n"
         tmp += "# so in reality it is calculated at 0.1 [fs]. It's good to remember this.\n"
         tmp += "#-------------------- \n"
-        tmp += "#Converted mass (CM) table \n"
+        tmp += "#Reduced mass (RM) table \n"
         for atom1 in range(1,mnextAtomTypeId):
             for atom2 in range(1,atom1+1):
                 cm = watomTypes[atom1] * watomTypes[atom2] / (watomTypes[atom1] + watomTypes[atom2])
                 scm = math.sqrt(cm)
-                tmp += "# element "+str(atom1)+":"+str(atom2)+" | CM = "+str(cm)+" | sqrt(CM) = %5.2f \n"%(scm)
-        tmp += "# dt = 1.0*min(sqrt(CM)) [fs] \n"
+                tmp += "# element "+str(atom1)+":"+str(atom2)+" | RM = "+str(cm)+" | sqrt(RM) = %5.2f \n"%(scm)
+        tmp += "# dt = %f*min(sqrt(RM)) \n"%(dt)
         tmp += "#-------------------- \n"
         tmp += "\n"
         tmp += "thermo 100 # computes and prints thermodynamic \n"
