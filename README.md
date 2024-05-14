@@ -61,7 +61,7 @@ the primitive cell or the conventional cell.
 | SPR-KKR          |  CPA          | [compoundname].sys |
 | MOPAC            |  no           | [compoundname].mop |
 | DFTB+            |  no           | [compoundname].gen |
-| Lammps           |  no           | [compoundname].data |
+| Lammps           |  no           | [compoundname].data (in.lmp)|
 | xyz              |  no           | [compoundname].xyz |
 | cfg              |  no           | [compoundname].cfg |
 | coo              |  no           | [compoundname].coo |
