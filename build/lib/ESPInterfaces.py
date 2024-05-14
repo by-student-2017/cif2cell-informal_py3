@@ -7234,11 +7234,11 @@ class INLMPFile:
         tmp += "clear \n"
         tmp += "echo both # echoes each input script command to both log file and screen \n"
         tmp += "#-------------------- Environment Settings -----------------------------------------------\n"
-        tmp += "variable HT equal  %7.2f # Desired High Temperature [K] unit \n"%float(self.temperature)
-        tmp += "variable HP equal %8.4f # Desired High Pressure [bar] unit (= 100 [kPa] = 0.1 [MPa]) \n"%float(self.pressure)
+        tmp += "variable HT equal  %7.2f # Desired High Temperature [K] \n"%float(self.temperature)
+        tmp += "variable HP equal %8.4f # Desired High Pressure [bar] (= 100 [kPa] = 0.1 [MPa]) \n"%float(self.pressure)
         tmp += "\n"
-        tmp += "variable LT equal 77.0 # Desired Low Temperature [K] unit \n"
-        tmp += "variable LP equal  0.0 # Desired Low Pressure [bar] unit (= 100 [kPa] = 0.1 [MPa]) \n"
+        tmp += "variable LT equal 77.0 # Desired Low Temperature [K] (77.0 K = Liquid N2, 298.15 K = Room temperature)\n"
+        tmp += "variable LP equal  0.0 # Desired Low Pressure [bar] (= 100 [kPa] = 0.1 [MPa]) \n"
         tmp += "\n"
         if self.Nsteps == 0.0:
             if self.pottype == "ReaxFF" or self.pottype == "":
