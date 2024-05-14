@@ -7439,7 +7439,7 @@ class INLMPFile:
         #
         tmp += "\n"
         tmp += "# sets the velocity of a group of atoms \n"
-        tmp += "velocity all create 298.15 123456 rot yes mom yes dist gaussian \n"
+        tmp += "velocity all create 77.0 123456 rot yes mom yes dist gaussian \n"
         tmp += "\n"
         #
         tmp += "#-------------------- Run the simulation -------------------------------------------------\n"
@@ -7451,7 +7451,7 @@ class INLMPFile:
             tmp += "# Annealing Simulation \n"
             tmp += "\n"
             tmp += "# Heating and pressure process (>= 4 [ps] (%d steps) recommended) \n"%(4.0*df/dt)
-            tmp += "fix f1 all npt temp 298.15 ${Tdesird} $(100.0*dt) iso 1.0 ${Pdesird} $(1000.0*dt) \n"
+            tmp += "fix f1 all npt temp 77.0 ${Tdesird} $(100.0*dt) iso 1.0 ${Pdesird} $(1000.0*dt) \n"
             tmp += "run ${Nsteps} # program is run for Nsteps iterations (Note: dt*${Nsteps}/%d = %6.2f [ps])\n"%(df,dt*Nsteps/df)
             tmp += "unfix f1 \n"
             tmp += "\n"
@@ -7461,7 +7461,7 @@ class INLMPFile:
             tmp += "unfix f2 \n"
             tmp += "\n"
             tmp += "# Cooling and depressurization process (>= 8 [ps] (%d steps) recommended) \n"%(8.0*df/dt)
-            tmp += "fix f3 all npt temp ${Tdesird} 298.15 $(100.0*dt) iso ${Pdesird} 1.0 $(1000.0*dt) \n"
+            tmp += "fix f3 all npt temp ${Tdesird} 77.0 $(100.0*dt) iso ${Pdesird} 1.0 $(1000.0*dt) \n"
             tmp += "run ${Nsteps} # program is run for Nsteps iterations (Note: dt*${Nsteps}/%d = %6.2f [ps])\n"%(df,dt*Nsteps/df)
             tmp += "unfix f3 \n"
             tmp += "\n"
