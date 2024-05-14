@@ -23,7 +23,7 @@ I have added support for LAMMPS .data files with orthogonal and triclinic boxes.
 ```
 ./cif2cell /path/to/file.cif --no-reduce -p lammps -o cif_file.data
 ```
-It would be a good idea to use Ovito as well. However, please note that the order of elements in Ovito is easily changed.
+It would be a good idea to use Ovito (GUI) code as well. However, please note that the order of elements in Ovito is easily changed.
 
 ## CIF2CELL
 
