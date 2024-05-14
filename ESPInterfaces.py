@@ -7238,8 +7238,9 @@ class INLMPFile:
             tmp += "# L(t) = L(0)*(1 + es_rate*dt*step) \n"
             tmp += "# strain [%] = es_rate*dt*Nstep*100 [%] = 0.1 * 0.001 * 4000 * 100 = 40 [%] \n"
             tmp += "\n"
-        if self.runtype == "mc":
-            tmp += "variable  MC_temp equal 1300.0 # Temperature of MC [K] \n"
+        if self.runtype == "mc" or self.runtype == "tfmc":
+            tmp += "variable  MC_temp equal %7.2f # Temperature of MC [K] \n"%float(self.temperature)
+            tmp += "variable  MC_Nsteps equal %8d # Number of MC simulation cycles \n"%int(Nsteps)
             tmp += "\n"
         tmp += "#-------------------- Initialization -----------------------------------------------------\n"
         if self.pottype == "ReaxFF" or self.pottype == "":
@@ -7345,8 +7346,8 @@ class INLMPFile:
         #
         if self.runtype == "tfmc":
             tmp += "#-------------------- The time-stamped force-bias Monte Carlo (tfMC) algorithm -----------\n"
-            tmp += "fix f1 all tfmc 0.1 ${Tdesird} 12345 com 1 1 1 rot \n"
-            tmp += "run ${Nsteps} \n"
+            tmp += "fix f1 all tfmc 0.1 ${MC_temp} 12345 com 1 1 1 rot \n"
+            tmp += "run ${MC_Nsteps} \n"
             tmp += "unfix f1 \n"
             tmp += "\n"
             tmp += "#-------------------- \n"
@@ -7360,8 +7361,8 @@ class INLMPFile:
                 tmp += "# Memo; "+str(mc_element)+"\n"
                 for atom1 in range(1,mnextAtomTypeId):
                     for atom2 in range(1,atom1):
-                        tmp += "fix mc"+str(atom1)+str(atom2)+" all atom/swap 1 1 12345 ${Tdesird} ke no types "+str(atom1)+" "+str(atom2)+" \n"
-                tmp += "run ${Nsteps} \n"
+                        tmp += "fix mc"+str(atom1)+str(atom2)+" all atom/swap 1 1 12345 ${MC_temp} ke no types "+str(atom1)+" "+str(atom2)+" \n"
+                tmp += "run ${MC_Nsteps} \n"
                 for atom1 in range(1,mnextAtomTypeId):
                     for atom2 in range(1,atom1):
                         tmp += "unfix mc"+str(atom1)+str(atom2)+"\n"
