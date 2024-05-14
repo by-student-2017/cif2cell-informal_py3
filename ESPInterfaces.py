@@ -7353,10 +7353,6 @@ class INLMPFile:
         tmp += "#-------------------- Settings -----------------------------------------------------------\n"
         tmp += "reset_timestep 0 \n"
         tmp += "\n"
-        for atom1 in range(1,mnextAtomTypeId):
-            for atom2 in range(1,atom1):
-                tmp += "fix mc"+str(atom1)+str(atom2)+" all atom/swap 1 1 12345 ${MC_temp} ke no types "+str(atom1)+" "+str(atom2)+" \n"
-                #tmp += str(watomTypes[atom1])+", "+str(watomTypes[atom2])+" \n"
         #
         if self.dt == 0.25:
             if self.pottype == "ReaxFF" or self.pottype == "":
@@ -7377,12 +7373,20 @@ class INLMPFile:
                 tmp += "timestep "+str(float(self.dt)/1000)+" # [ps] for metal unit = "+str(self.dt)+" [fs] \n"
                 dt = float(self.dt)/1000
         tmp += "#-------------------- \n"
-        tmp += "#Note: 10 [fs] = about 3335.6 [cm^-1] (C-H, O-H or N-H stretching vibration) \n"
+        tmp += "#Note: 10 [fs] = about 3335.6 [cm^-1] (This corresponds to C-H, O-H or N-H stretching vibration, etc) \n"
         tmp += "#Setting dt = 1 [fs] corresponds to dividing the period of these vibrations into 10. \n"
         tmp += "#For systems consisting of heavy elements, a larger dt can be set by estimating from the reduced mass. \n"
         tmp += "#However, 1 [fs] is usually selected except for ReaxFF and AIREBO. \n"
         tmp += "#Theoretically, AIREBO is said to be good at 0.01 [fs], but this is a difficult calculation, \n"
         tmp += "# so in reality it is calculated at 0.1 [fs]. It's good to remember this.\n"
+        tmp += "#-------------------- \n"
+        tmp += "#Converted mass (CM) table \n"
+        for atom1 in range(1,mnextAtomTypeId):
+            for atom2 in range(1,atom1+1):
+                cm = watomTypes[atom1] * watomTypes[atom2] / (watomTypes[atom1] + watomTypes[atom2])
+                scm = math.sqrt(cm)
+                tmp += "# element "+str(atom1)+":"+str(atom2)+" | CM = "+str(cm)+" | sqrt(CM) = %5.2f \n"%(scm)
+        tmp += "# dt = 1.0*min(sqrt(CM)) [fs] \n"
         tmp += "#-------------------- \n"
         tmp += "\n"
         tmp += "thermo 100 # computes and prints thermodynamic \n"
