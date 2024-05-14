@@ -7377,6 +7377,15 @@ class INLMPFile:
         tmp += "#-------------------- \n"
         tmp += "# It is also good to remember that MEAM etc. can be created using potfit, MPC, etc. \n"
         tmp += "#-------------------- \n"
+        tmp += "#Attension!!!: These potentials basically do not take spin into account, \n"
+        tmp += "# so good results are often not obtained in environments where phase transformation occurs. \n"
+        tmp += "#-------------------- \n"
+        tmp += "#Attension!!!: Neural networks (NNs) do not explicitly consider magnetism in their formulas \n"
+        tmp += "# (unless otherwise specified, NNs also do not explicitly consider electric charges in their formulas). \n"
+        tmp += "# Therefore, it must be remembered that NNs cannot deal with external magnetism or voltage. \n"
+        tmp += "#-------------------- \n"
+        tmp += "#Note: If you want to apply voltage: ReaxFF, COMP3, DFTB+ code and ESM-RISM (QE, OpenMX, etc) \n"
+        tmp += "#-------------------- \n"
         tmp += "\n"
         #
         if self.runtype == "tfmc":
