@@ -81,7 +81,10 @@ The distribution includes:
   and also a few from ICSD (with permission).
 * The file PyCifRW-X.X.tar.gz, containing the PyCifRW package needed for
   parsing CIF files.
-* VESTA is also available on CUI.: PowerShell: 'C:\Program Files\VESTA-win64\VESTA.exe' -nogui -i POSCAR -o POSCAR.cif
+* VESTA is also available on CUI.: e.g., On PowerShell
+```
+'C:\Program Files\VESTA-win64\VESTA.exe' -nogui -i POSCAR -o POSCAR.cif
+```
 
 ## INSTALLATION INSTRUCTIONS
 
