@@ -286,6 +286,7 @@ progspec.add_option("--lammps-Nsteps",dest="lammps_Nsteps",help="This program is
 progspec.add_option("--lammps-show-temp",dest="lammps_show_temp",help="Display the temperature at each atom. It is determined from the velocity of each atom. (default: no)", metavar="no")
 progspec.add_option("--lammps-pot-lib",dest="lammps_pot_lib",help="Path to the LAMMPS potential library. Also settable by the LAMMPS_POTLIB environment variable.")
 progspec.add_option("--lammps-pot-pri",dest="lammps_pot_priority",help="(Unimplemented) Set the priority of different potentials by a list of suffixes. Also available via the LAMMPS_POT_PRIORITY environment variable. e.g., get ffield.reax.2024XY.CHOSiLiF from (https://github.com/by-student-2017/lammps_education_reaxff_win/tree/master/potentials).", metavar='"2024X,2023X,2022X,2021X,2020X"')
+progspec.add_option("--lammps-E",dest="lammps_Efield",help="Add external electric field [volts/Angstrom] at z axis). (default: 0.0)", metavar=0.0)
 #
 parser.add_option_group(generalopts)
 parser.add_option_group(cellgenopts)
@@ -3027,6 +3028,11 @@ if outputprogram == 'lammps':
             inlmpfile.show_temp = options.lammps_show_temp
         else:
             inlmpfile.show_temp = "no"
+        #
+        if options.lammps_Efield:
+            inlmpfile.Efield = options.lammps_Efield
+        else:
+            inlmpfile.Efield = 0.0
         #
         inlmpfile.filename = outputfile
         f = open("in.lmp", "w")

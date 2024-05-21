@@ -7199,6 +7199,7 @@ class INLMPFile:
         self.rdf = "no"
         self.Nsteps = 4000
         self.show_temp = "no"
+        self.Efield = 0.0
         # we need the potcar directory
         if potcardir != "":
             self.potcardir = potcardir
@@ -7250,6 +7251,11 @@ class INLMPFile:
         tmp += "variable   Nsteps equal %8d # Number of simulation cycles \n"%int(Nsteps)
         tmp += "\n"
         #
+        if self.Efield != 0.0:
+            tmp += "# E-field component values (electric field units) (electric field = volts/Angstrom) \n"
+            tmp += "variable   va equal 1.0*10^-10 \n"
+            tmp += "\n"
+        #
         if self.pottype == "ReaxFF" or self.pottype == "":
             df = 1000.0
         else:
@@ -7287,7 +7293,10 @@ class INLMPFile:
         else:
             tmp += "units metal    # eV,atomic charge,angstroms,ps,kelvin,bars,g/mol \n"
         tmp += "dimension 3 \n"
-        tmp += "boundary p p p # periodic boundary condition \n"
+        if self.Efield != 0.0:
+            tmp += "boundary p p f # periodic boundary condition (x and y) \n"
+        else:
+            tmp += "boundary p p p # periodic boundary condition \n"
         tmp += "\n"
         if self.pottype == "ReaxFF" or self.pottype == "" or self.pottype == "COMP3" or self.pottype == "Buck" :
             tmp += "atom_style charge \n"
@@ -7471,6 +7480,7 @@ class INLMPFile:
             tmp += "#Attension!!!: Neural networks (NNs) do not explicitly consider magnetism in their formulas \n"
             tmp += "# (unless otherwise specified, NNs also do not explicitly consider electric charges in their formulas). \n"
             tmp += "# Therefore, it must be remembered that NNs cannot deal with external magnetism or voltage. \n"
+            tmp += "# [The latest CHGNet may solve these problems to a large extent. I have high expectations for future developments.] \n"
             tmp += "# ---------- ---------- ---------- ---------- ---------- ---------- ---------- \n"
             tmp += "#Note: If you want to apply voltage: ReaxFF, COMP3, DFTB+, DFTBP and ESM-RISM (QE, OpenMX, etc) \n"
             tmp += "# I think we need to rewrite the charge part a little in DFTBP. \n"
@@ -7606,6 +7616,12 @@ class INLMPFile:
         tmp += "# sets the velocity of a group of atoms \n"
         tmp += "velocity all create 77.0 123456 rot yes mom yes dist gaussian \n"
         tmp += "\n"
+        if self.Efield != 0.0:
+            tmp += "# E-field component values (electric field units) (electric field = volts/Angstrom) \n"
+            tmp += "fix kick all efield 0.0 0.0 $(1.0/lz*v_va) \n"
+            tmp += "#fix top all wall/reflect zhi EDGE # For boundary p p f \n"
+            tmp += "#fix xwalls all wall/reflect xlo EDGE xhi EDGE # For boundary f p p \n"
+            tmp += "\n"
         #
         tmp += "#-------------------- Run the simulation -------------------------------------------------\n"
         if self.runtype == "ann" or self.runtype == "":
