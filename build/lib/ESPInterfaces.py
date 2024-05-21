@@ -7451,29 +7451,30 @@ class INLMPFile:
             tmp += "\n"
             tmp += "kspace_style pppm 1e-05 \n"
             tmp += "\n"
-        tmp += "#-------------------- \n"
-        tmp += "#Note: ReaxFF and AIREBO are suitable for molecular calculations. \n"
-        tmp += "# MEAM, EAM, FS, and ADP are suitable for crystal calculations. \n"
-        tmp += "# All potentials are weak in calculations between interfaces and molecules \n"
-        tmp += "# (potentials are often not reproduced well unless parameters are changed with this in mind). \n"
-        tmp += "#-------------------- \n"
-        tmp += "#Caution: Although often misunderstood, \n"
-        tmp += "# MEAM, EAM and ADP take into account the concepts of many-body effects and universal potential. \n"
-        tmp += "# FS takes into account many-body effects based on the theory of tight binding method. \n"
-        tmp += "# AIREBO and Tersoff take into account the concepts of universal potential. \n"
-        tmp += "#-------------------- \n"
-        tmp += "# It is also good to remember that MEAM etc. can be created using potfit, MPC, etc. \n"
-        tmp += "#-------------------- \n"
-        tmp += "#Attension!!!: These potentials basically do not take spin into account, \n"
-        tmp += "# so good results are often not obtained in environments where phase transformation occurs. \n"
-        tmp += "#-------------------- \n"
-        tmp += "#Attension!!!: Neural networks (NNs) do not explicitly consider magnetism in their formulas \n"
-        tmp += "# (unless otherwise specified, NNs also do not explicitly consider electric charges in their formulas). \n"
-        tmp += "# Therefore, it must be remembered that NNs cannot deal with external magnetism or voltage. \n"
-        tmp += "#-------------------- \n"
-        tmp += "#Note: If you want to apply voltage: ReaxFF, COMP3, DFTBP (DFTB+) and ESM-RISM (QE, OpenMX, etc) \n"
-        tmp += "# I think we need to rewrite the charge part a little in DFTBP. \n"
-        tmp += "#-------------------- \n"
+        if self.pottype == "ReaxFF" or self.pottype == "" or self.pottype == "MEAM" or self.pottype == "EAM" or self.pottype == "ADP" or self.pottype == "COMP3" or self.pottype == "AIREBO":
+            tmp += "#------------------------------------------------------------------------------\n"
+            tmp += "#Note: ReaxFF and AIREBO are suitable for molecular calculations. \n"
+            tmp += "# MEAM, EAM, FS, and ADP are suitable for crystal calculations. \n"
+            tmp += "# All potentials are weak in calculations between interfaces and molecules \n"
+            tmp += "# (potentials are often not reproduced well unless parameters are changed with this in mind). \n"
+            tmp += "# ---------- ---------- ---------- ---------- ---------- ---------- ---------- \n"
+            tmp += "#Caution: Although often misunderstood, \n"
+            tmp += "# MEAM, EAM and ADP take into account the concepts of many-body effects and universal potential. \n"
+            tmp += "# FS takes into account many-body effects based on the theory of tight binding method. \n"
+            tmp += "# AIREBO and Tersoff take into account the concepts of universal potential. \n"
+            tmp += "# ---------- ---------- ---------- ---------- ---------- ---------- ---------- \n"
+            tmp += "# It is also good to remember that MEAM etc. can be created using potfit, MPC, etc. \n"
+            tmp += "# ---------- ---------- ---------- ---------- ---------- ---------- ---------- \n"
+            tmp += "#Attension!!!: These potentials basically do not take spin into account, \n"
+            tmp += "# so good results are often not obtained in environments where phase transformation occurs. \n"
+            tmp += "# ---------- ---------- ---------- ---------- ---------- ---------- ---------- \n"
+            tmp += "#Attension!!!: Neural networks (NNs) do not explicitly consider magnetism in their formulas \n"
+            tmp += "# (unless otherwise specified, NNs also do not explicitly consider electric charges in their formulas). \n"
+            tmp += "# Therefore, it must be remembered that NNs cannot deal with external magnetism or voltage. \n"
+            tmp += "# ---------- ---------- ---------- ---------- ---------- ---------- ---------- \n"
+            tmp += "#Note: If you want to apply voltage: ReaxFF, COMP3, DFTB+, DFTBP and ESM-RISM (QE, OpenMX, etc) \n"
+            tmp += "# I think we need to rewrite the charge part a little in DFTBP. \n"
+            tmp += "#------------------------------------------------------------------------------\n"
         tmp += "\n"
         #
         if self.runtype == "tfmc":
@@ -7540,14 +7541,14 @@ class INLMPFile:
                 tmp += "timestep "+str(float(self.dt)/1000)+" # [ps] for metal unit = "+str(self.dt)+" [fs] \n"
                 dt = float(self.dt)/1000
                 Nout = 1000
-        tmp += "#-------------------- \n"
+        tmp += "#------------------------------------------------------------------------------\n"
         tmp += "#Note: 10 [fs] = about 3335.6 [cm^-1] (This corresponds to C-H, O-H or N-H stretching vibration, etc) \n"
         tmp += "#Setting dt = 1 [fs] corresponds to dividing the period of these vibrations into 10. \n"
         tmp += "#For systems consisting of heavy elements, a larger dt can be set by estimating from the reduced mass. \n"
         tmp += "#However, 1 [fs] is usually selected except for ReaxFF and AIREBO. \n"
         tmp += "#Theoretically, AIREBO is said to be good at 0.01 [fs], but this is a difficult calculation, \n"
         tmp += "# so in reality it is calculated at 0.1 [fs]. It's good to remember this.\n"
-        tmp += "#-------------------- \n"
+        tmp += "# ---------- ---------- ---------- ---------- ---------- ---------- ---------- \n"
         tmp += "#Reduced mass (RM) table \n"
         for atom1 in range(1,mnextAtomTypeId):
             for atom2 in range(1,atom1+1):
@@ -7555,18 +7556,18 @@ class INLMPFile:
                 scm = math.sqrt(cm)
                 tmp += "# element "+str(atom1)+":"+str(atom2)+" | RM = "+str(cm)+" | sqrt(RM) = %5.2f \n"%(scm)
         tmp += "# dt = %f*min(sqrt(RM)) \n"%(dt)
-        tmp += "#-------------------- \n"
+        tmp += "#------------------------------------------------------------------------------\n"
         tmp += "\n"
         tmp += "thermo %d # computes and prints thermodynamic \n"%(Nout)
         tmp += "thermo_style custom step temp vol press etotal # specifies content of thermodynamic data to be printed in screen \n"
         #
         tmp += "\n"
         if self.show_temp == "yes":
-            tmp += "#------------ calculate temperature per particle --------- \n"
+            tmp += "#------------ calculate temperature per particle ----------------------------- \n"
             tmp += "variable kB   equal 1.380650e-23 # Boltzman constant [J/K] \n"
             tmp += "variable eV2J equal 1.602763e-19 # change [eV] to [J] unit \n"
             tmp += "compute ke all ke/atom           # The kinetic energy [eV] of each atom \n"
-            tmp += "#-------------------- \n"
+            tmp += "# ---------- ---------- ---------- ---------- ---------- ---------- ---------- \n"
             tmp += "#Ref: variable temp atom c_ke*${eV2J}/(1.5*${kB}) #### T \n"
             tmp += "variable tempatom atom c_ke*${eV2J}*(2/3)/${kB} # ke = (1/2)*m*v^2 = (3/2)*kB*T, T = ke*(2/3)/kB \n"
             #
@@ -7575,7 +7576,7 @@ class INLMPFile:
             else:
                 tmp += "#dump d1 all cfg %d cfg/run_temp.*.cfg mass type xs ys zs id type vx vy vz fx fy fz v_tempatom \n"%(Nout)
             #
-            tmp += "#-------------------- \n"
+            tmp += "# ---------- ---------- ---------- ---------- ---------- ---------- ---------- \n"
             tmp += "fix ave_tempatom all ave/atom 1 %d %d v_tempatom # Average calculation for temperature of each atom \n"%(Nout,Nout)
             #
             if self.pottype == "ReaxFF" or self.pottype == "" or self.pottype == "COMP3":
@@ -7583,14 +7584,14 @@ class INLMPFile:
             else:
                 tmp += "dump d1 all cfg %d cfg/run_temp.*.cfg mass type xs ys zs id type vx vy vz fx fy fz f_ave_tempatom \n"%(Nout)
             #
-            tmp += "#-------------------- \n"
+            tmp += "# ---------- ---------- ---------- ---------- ---------- ---------- ---------- \n"
             tmp += "dump_modify d1 element ${elem} \n"
-            tmp += "#-------------------- \n"
+            tmp += "# ---------- ---------- ---------- ---------- ---------- ---------- ---------- \n"
             tmp += "# References \n"
             tmp += "# [1] M. Li et al., Nanomaterials 2019, 9(3), 347; https://doi.org/10.3390/nano9030347 \n"
             tmp += "# URL: https://www.mdpi.com/2079-4991/9/3/347 \n"
             tmp += "# Supplementary Materials: https://www.mdpi.com/2079-4991/9/3/347/s1 \n"
-            tmp += "#--------------------------------------------------------- \n"
+            tmp += "#-------------------------------------------------------------------------------\n"
             tmp += "\n"
         else:
             tmp += "#---------- output file settings -----------------------------------------------\n"
