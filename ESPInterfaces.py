@@ -7630,7 +7630,7 @@ class INLMPFile:
             tmp += "# If there are no problems with the calculations above, \n"
             tmp += "# change the conditions to the ones below and publish at a conference or in a paper. \n"
             tmp += "# ---------- ---------- ---------- ---------- ---------- ---------- ---------- \n"
-            tmp += "# e.g., Born-Mayer-Huggins (BMH) or Buckingham potentials\n"
+            tmp += "# e.g., Born-Mayer-Huggins (BMH) or Buckingham potentials \n"
             tmp += "# 1. Two amorphous structures are prepared separately at 4000 K \n"
             tmp += "# 2. Docking two amorphous structures \n"
             tmp += "# 3. Structural relaxation at atmospheric pressure (1 bar) \n"
