@@ -7471,7 +7471,7 @@ class INLMPFile:
         tmp += "# (unless otherwise specified, NNs also do not explicitly consider electric charges in their formulas). \n"
         tmp += "# Therefore, it must be remembered that NNs cannot deal with external magnetism or voltage. \n"
         tmp += "#-------------------- \n"
-        tmp += "#Note: If you want to apply voltage: ReaxFF, COMP3, DFTBP (DFTB+) and ESM-RISM (QE, OpenMX, etc) \n"
+        tmp += "#Note: If you want to apply voltage: ReaxFF, COMP3, DFTB+, DFTBP and ESM-RISM (QE, OpenMX, etc) \n"
         tmp += "# I think we need to rewrite the charge part a little in DFTBP. \n"
         tmp += "#-------------------- \n"
         tmp += "\n"
@@ -7612,17 +7612,17 @@ class INLMPFile:
             tmp += "\n"
             tmp += "# Heating and pressure process (>= 4 [ps] (%d steps) recommended) \n"%(4.0*df/dt)
             tmp += "fix f1 all npt temp ${LT} ${HT} $(100.0*dt) iso ${LP} ${HP} $(1000.0*dt) \n"
-            tmp += "run ${Nsteps} # program is run for Nsteps iterations (Note: dt*${Nsteps}/%d = %6.2f [ps])\n"%(df,dt*Nsteps/df)
+            tmp += "run ${Nsteps} # program is run for Nsteps iterations (Note: dt*${Nsteps}/%d = %6.2f [ps])\n"%(df,dt*float(Nsteps)/df)
             tmp += "unfix f1 \n"
             tmp += "\n"
             tmp += "# Heat retention (>= 16 [ps] (%d steps) recommended) \n"%(16.0*df/dt)
             tmp += "fix f2 all nvt temp ${HT} ${HT} $(100.0*dt) \n"
-            tmp += "run ${Nsteps} # program is run for Nsteps iterations (Note: dt*${Nsteps}/%d = %6.2f [ps])\n"%(df,dt*Nsteps/df)
+            tmp += "run ${Nsteps} # program is run for Nsteps iterations (Note: dt*${Nsteps}/%d = %6.2f [ps])\n"%(df,dt*float(Nsteps)/df)
             tmp += "unfix f2 \n"
             tmp += "\n"
             tmp += "# Cooling and depressurization process (>= 8 [ps] (%d steps) recommended) \n"%(8.0*df/dt)
             tmp += "fix f3 all npt temp ${HT} ${LT} $(100.0*dt) iso ${HP} ${LP} $(1000.0*dt) \n"
-            tmp += "run ${Nsteps} # program is run for Nsteps iterations (Note: dt*${Nsteps}/%d = %6.2f [ps])\n"%(df,dt*Nsteps/df)
+            tmp += "run ${Nsteps} # program is run for Nsteps iterations (Note: dt*${Nsteps}/%d = %6.2f [ps])\n"%(df,dt*float(Nsteps)/df)
             tmp += "unfix f3 \n"
             tmp += "\n"
             tmp += "#-------------------------------------------------------------------------------- \n"
@@ -7655,7 +7655,7 @@ class INLMPFile:
                 tmp += "# ----- \n"
             tmp += "\n"
             tmp += "fix f"+str(natom+1)+" all nvt temp ${HT} ${HT} $(100.0*dt) \n"
-            tmp += "run ${Nsteps} # program is run for Nsteps iterations (Note: dt*${Nsteps}/%d = %6.2f [ps])\n"%(df,dt*Nsteps/df)
+            tmp += "run ${Nsteps} # program is run for Nsteps iterations (Note: dt*${Nsteps}/%d = %6.2f [ps])\n"%(df,dt*float(Nsteps)/df)
             tmp += "unfix f"+str(natom+1)+" \n"
             tmp += "\n"
             #
@@ -7729,7 +7729,7 @@ class INLMPFile:
             tmp += "fix 3 all temp/rescale 10 ${HT} ${HT} 0.05 1.0 \n"
             tmp += "\n"
             tmp += "# number of iterations is given so as to give 40% strain to the material \n"
-            tmp += "run ${Nsteps} # program is run for Nsteps iterations (Note: dt_es*${Nsteps}/%d = %6.2f [ps])\n"%(df,dt*Nsteps/df)
+            tmp += "run ${Nsteps} # program is run for Nsteps iterations (Note: dt_es*${Nsteps}/%d = %6.2f [ps])\n"%(df,dt*float(Nsteps)/df)
             tmp += "\n"
             #
             tmp += "#-------------------------------------------------------------------------------- \n"
@@ -7827,7 +7827,7 @@ class INLMPFile:
             tmp += "\n"
             tmp += "# Sets NVT and Run NVT + RDF calculations \n"
             tmp += "fix f2 all nvt temp ${HT} ${HT} $(100.0*dt) \n"
-            tmp += "run ${Nsteps} # program is run for Nsteps iterations (Note: dt*${Nsteps}/%d = %6.2f [ps])\n"%(df,dt*Nsteps/df)
+            tmp += "run ${Nsteps} # program is run for Nsteps iterations (Note: dt*${Nsteps}/%d = %6.2f [ps])\n"%(df,dt*float(Nsteps)/df)
             tmp += "unfix f2 \n"
             tmp += "\n"
         #
