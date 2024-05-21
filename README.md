@@ -61,7 +61,7 @@ the primitive cell or the conventional cell.
 | Akai-KKR         |  CPA          | [compoundname].in ([compoundname].in) |
 | SPR-KKR          |  CPA          | [compoundname].sys |
 | MOPAC            |  no           | [compoundname].mop |
-| DFTB+            |  no           | [compoundname].gen |
+| DFTB+            |  no           | [compoundname].gen (in.hsd)|
 | Lammps           |  no           | [compoundname].data (in.lmp)|
 | xyz              |  no           | [compoundname].xyz |
 | cfg              |  no           | [compoundname].cfg |
@@ -255,7 +255,7 @@ Details of cif2cell-informal
 *	DFTB+
 
 
-	cif2cell -p dftb --no-reduce -f *.cif
+	cif2cell -p dftb --no-reduce --setup-all --dftb-htype=GFN1-xTB --dftb-runtype=md --dftb-dt=0.25 --dftb-temperature=300 --dftb-pressure=1.0 --dftb-Nsteps=4000 --lammps-pot-lib="./" -f *.cif
 
 
 

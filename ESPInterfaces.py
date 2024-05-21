@@ -3332,6 +3332,689 @@ class DFTBFile(GeometryOutputFile):
         filestring += str(self.cell.latticevectors[1].scalmult(self.cell.lengthscale))+"\n"
         filestring += str(self.cell.latticevectors[2].scalmult(self.cell.lengthscale))+"\n"
         return filestring
+        
+class INHSDFile:
+    """
+    Class for representing and outputting a INHSD file for Lammps.
+    """
+    def __init__(self, crystalstructure, docstring="", potcardir="", dt=1.0,
+                 htype="", runtype=""):
+        self.cell = crystalstructure
+        self.docstring = "# "+docstring.lstrip("#").rstrip("\n")+"\n"
+        self.dt = dt
+        self.htype = htype
+        self.runtype = runtype
+        self.filename = ""
+        self.pressure = 1.0
+        self.temperature = 300.0
+        self.Nsteps = 4000
+        self.Efield = 0.0
+        # we need the potcar directory
+        if potcardir != "":
+            self.potcardir = potcardir
+        else:
+            try:
+                self.potcardir = os.environ['DFTB_SKFLIB']
+            except:
+                try:
+                    self.potcardir = os.environ['SKPAR_SKFLIB']
+                except:
+                    self.potcardir = ""
+    def __str__(self):
+        tmp = "#-----------------------------------------------------------------------------------------\n"
+        tmp += self.docstring
+        tmp += "#----------------------------------------------------------------------------------------\n"
+        tmp += "# DFTB+ 23.1 \n"
+        tmp += "#------------------------------ -------------\n"
+        tmp += "# Run command for Linux: \n"
+        tmp += "#  export OMP_NUM_THREADS=1 \n"
+        tmp += "#  mpirun -np 4 dftb+ < in.hsd > out_scf.hsd \n"
+        tmp += "#------------------------------ -------------\n"
+        tmp += "#-----------------------------------------------------------------------------------------\n"
+        tmp += "Geometry = VaspFormat { \n"
+        tmp += "  <<< \"POSCAR\" \n"
+        tmp += "}\n"
+        if self.hytpe != "DFTB":
+            tmp += "Hamiltonian = xTB { \n"
+            tmp += "  Method = \"%s\" # GFN1-xTB, IPEA1-xTB, or GFN2-xT \n"%(self.htype)
+            tmp += "  Scc = Yes \n"
+            tmp += "  SccTolerance = 1e-3 \n"
+            tmp += "  MaxSCCIterations = 1000 \n"
+        else:
+            tmp += "Hamiltonian = %s { \n"%(self.htype)
+            tmp += "  Scc = Yes \n"
+            tmp += "  SccTolerance = 1e-5 \n"
+            tmp += "  SlaterKosterFiles = Type2FileNames { \n"
+            tmp += "    Prefix = \"./\" \n"
+            tmp += "    Separator = \"-\" \n"
+            tmp += "    Suffix = \".skf\" \n"
+            tmp += "  }\n"
+            tmp += "  MaxAngularMomentum { \n"
+            # for loop
+            tmp += "  }\n"
+        tmp += "  Charge = 0.0 \n"
+        tmp += "  KPointsAndWeights = SupercellFolding { \n"
+        # k points
+        tmp += "  } \n"
+        tmp += "  Filling = MethfesselPaxton { \n"
+        tmp += "    Order = 2 \n"
+        tmp += "    Temperature [eV] = 0.02 \n"
+        tmp += "  } \n"
+        tmp += "} \n"
+        
+        if self.Nsteps == 0.0:
+            if self.pottype == "ReaxFF" or self.pottype == "":
+                Nsteps = 8000
+            else:
+                Nsteps = 20000
+        else:
+            Nsteps = self.Nsteps
+        tmp += "variable   Nsteps equal %8d # Number of simulation cycles \n"%int(Nsteps)
+        tmp += "\n"
+        #
+        if self.Efield != 0.0:
+            tmp += "# E-field component values (electric field units) (electric field = volts/Angstrom) \n"
+            tmp += "variable   va equal 1.0*10^-10 \n"
+            tmp += "\n"
+        #
+        if self.pottype == "ReaxFF" or self.pottype == "":
+            df = 1000.0
+        else:
+            df = 1.0
+        #
+        if self.runtype == "ten":
+            dt_es = 0.001*df
+            tmp += "variable    dt_es equal  %7.4f # [fs] \n"%(dt_es)
+            es_rate = 0.1
+            tmp += "variable  es_rate equal    0.1 # engineering strain rate (1/time units) \n"
+            tmp += "#-------------------- \n"
+            tmp += "# Note: es_rate/dt_es = 0.1 / (1e-15) = 1.0e13 [1/s] \n"
+            tmp += "# L(t) = L(0)*(1 + es_rate*dt*step) \n"
+            tmp += "# strain [%] = es_rate*dt*Nstep*100 [%] = "+"%4.1f"%(es_rate*dt_es*Nsteps*100)+" [%] \n"
+            tmp += "#-------------------- \n"
+            tmp += "\n"
+        if self.runtype == "com":
+            dt_es = 0.001*df
+            tmp += "variable    dt_es equal  %7.4f # [fs] \n"%(dt_es)
+            es_rate = -0.04
+            tmp += "variable  es_rate equal  -0.04 # engineering strain rate (1/time units) (Negative value for compression) \n"
+            tmp += "#-------------------- \n"
+            tmp += "# Note: es_rate/dt_es = -0.04 / (1e-15) = -4.0e12 [1/s] \n"
+            tmp += "# L(t) = L(0)*(1 + es_rate*dt*step) \n"
+            tmp += "# strain [%] = es_rate*dt*Nstep*100 [%] = "+"%4.1f"%(es_rate*dt_es*Nsteps*100)+" [%] (Negative value for compression) \n"
+            tmp += "#-------------------- \n"
+            tmp += "\n"
+        if self.runtype == "mc" or self.runtype == "tfmc":
+            tmp += "variable  MC_temp equal %7.2f # Temperature of MC [K] \n"%float(self.temperature)
+            tmp += "variable  MC_Nsteps equal %8d # Number of MC simulation cycles \n"%int(Nsteps)
+            tmp += "\n"
+        tmp += "#-------------------- Initialization -----------------------------------------------------\n"
+        if self.pottype == "ReaxFF" or self.pottype == "":
+            tmp += "units real     # determines units of all quantities used in the input file \n"
+        else:
+            tmp += "units metal    # eV,atomic charge,angstroms,ps,kelvin,bars,g/mol \n"
+        tmp += "dimension 3 \n"
+        if self.Efield != 0.0:
+            tmp += "boundary p p f # periodic boundary condition (x and y) \n"
+        else:
+            tmp += "boundary p p p # periodic boundary condition \n"
+        tmp += "\n"
+        if self.pottype == "ReaxFF" or self.pottype == "" or self.pottype == "COMP3" or self.pottype == "Buck" :
+            tmp += "atom_style charge \n"
+        else:
+            tmp += "atom_style atomic \n"
+        tmp += "read_data " + self.filename + "\n"
+        tmp += "\n"
+        tmp += "#replicate 1 1 1 \n"
+        tmp += "\n"
+        #
+        elements = ""
+        elements_string = "variable elem string \""
+        mc_element = ""
+        matomTypes = {}
+        satomTypes = {}
+        watomTypes = {}
+        mnextAtomTypeId = 1
+        for a in self.cell.atomdata:
+            for b in a:
+                sp_b = b.spcstring()
+                matomType = str(b).split()[0]
+                if not matomType in matomTypes:
+                    #tmp += "#mass "+str(mnextAtomTypeId)+" "+str(ed.elementweight[sp_b])+" # "+str(sp_b)+"\n"
+                    elements += str(sp_b)
+                    if mnextAtomTypeId != 1:
+                      elements_string += " " + str(sp_b)
+                      mc_element += ", "+str(mnextAtomTypeId)+":"+str(sp_b)
+                    else:
+                      elements_string += str(sp_b)
+                      mc_element += str(mnextAtomTypeId)+":"+str(sp_b)
+                    matomTypes[matomType] = mnextAtomTypeId
+                    satomTypes[mnextAtomTypeId] = str(sp_b)
+                    watomTypes[mnextAtomTypeId] = ed.elementweight[sp_b]
+                    mnextAtomTypeId += 1
+        tmp += elements_string + "\"\n"
+        #
+        #Potential address end manipulation.
+        potcardir = self.potcardir
+        if potcardir == "./":
+          potcardir = ""
+        elif potcardir[-1] != "/":
+            potcardir = self.potcardir+"/"
+        #
+        tmp += "\n"
+        tmp += "#-------------------- Force field --------------------------------------------------------\n"
+        if self.pottype == "ReaxFF" or self.pottype == "":
+            tmp += "pair_style reax/c NULL \n"
+            tmp += "pair_coeff * * "+str(potcardir)+"ffield.reax ${elem} \n"
+            tmp += "\n"
+            tmp += "# Handle charges using the QEq method. \n"
+            tmp += "fix q1 all qeq/reax 1 0.0 10.0 1e-6 reax/c \n"
+            tmp += "\n"
+        elif self.pottype == "MEAM":
+            tmp += "pair_style meam/c \n"
+            tmp += "pair_coeff * * "+str(potcardir)+str(elements)+".library.meam ${elem} "+str(potcardir)+str(elements)+".meam ${elem} \n"
+            tmp += "\n"
+        elif self.pottype == "EAM":
+            tmp += "#pair_style eam/alloy # e.g., Generate on Fortran code by Dr. Zhou (2004) \n"
+            tmp += "#pair_coeff * * "+str(potcardir)+str(elements)+"_zhou04.eam.alloy ${elem} # specifies the potential file used \n"
+            tmp += "\n"
+        elif self.pottype == "FS":
+            tmp += "pair_style eam/fs    # e.g., Generate on potfit code \n"
+            tmp += "pair_coeff * * "+str(potcardir)+str(elements)+".eam.fs ${elem} # specifies the potential file used \n"
+            tmp += "\n"
+        elif self.pottype == "ADP":
+            tmp += "pair_style adp # ADP(Angular Dependent Potential) \n"
+            tmp += "pair_coeff * * "+str(potcardir)+str(elements)+".adp.txt ${elem} \n"
+            tmp += "\n"
+        elif self.pottype == "COMP3":
+            tmp += "pair_style comb3 polar_off \n"
+            tmp += "pair_coeff * * "+str(potcardir)+"ffield.comb3."+str(elements)+" ${elem} \n"
+            tmp += "\n"
+            tmp += "# Handle charges using the QEq method. \n"
+            tmp += "fix q1 all qeq/comb 10 1.0e-3 \n"
+            tmp += "\n"
+        elif self.pottype == "AIREBO":
+            tmp += "pair_style airebo 3.0 1 0 \n"
+            tmp += "pair_coeff * * "+str(potcardir)+"CH.airebo ${elem} \n"
+            tmp += "\n"
+        elif self.pottype == "Tersoff":
+            tmp += "pair_style "+str(potcardir)+"tersoff \n"
+            tmp += "pair_coeff * * "+str(elements)+".tersoff ${elem} \n"
+            tmp += "\n"
+        elif self.pottype == "SW":
+            tmp += "pair_style sw \n"
+            tmp += "pair_coeff * * "+str(potcardir)+str(elements)+".sw ${elem} \n"
+            tmp += "\n"
+        elif self.pottype == "Buck":
+            tmp += "\n"
+            tmp += "#------------------------------------------------------- \n"
+            tmp += "set type 1 charge  1.0 # Li 1+ \n"
+            tmp += "set type 2 charge  4.0 # Si 4+ \n"
+            tmp += "set type 3 charge -2.0 # O  2- \n"
+            tmp += "#------------------------------------------------------- \n"
+            tmp += "\n"
+            tmp += "pair_style buck/coul/long 10 \n"
+            tmp += "pair_coeff * *     0.0    1.0      0.0  # all-all \n"
+            tmp += "pair_coeff 1 3   632.1018 0.2906   0.0  #  Li-O \n"
+            tmp += "pair_coeff 2 3  1283.91   0.32052 10.66 #  Si-O \n"
+            tmp += "pair_coeff 3 3 22764.3    0.149   27.89 #   O-O \n"
+            tmp += "\n"
+            tmp += "#------------------------------------------------------- \n"
+            tmp += "# Memo (divalent cations, TM2+) (MT2+ on Li site) \n"
+            tmp += "# pair_coeff 3 4   715.8    0.3464    0.000 # O-Mn, [G1] \n"
+            tmp += "# pair_coeff 3 4   694.1    0.3399    0.000 # O-Fe, [G1] \n"
+            tmp += "# pair_coeff 3 4   696.3    0.3362    0.000 # O-Co, [G1] \n"
+            tmp += "# pair_coeff 3 4   683.5    0.3332    0.000 # O-Ni, [G1] \n"
+            tmp += "# pair_coeff 3 4   499.6    0.3595    0.000 # O-Zn, [G1] \n"
+            tmp += "\n"
+            tmp += "# pair_coeff 3 4   821.6    0.3242    0.000 # O-Mg, [G1] \n"
+            tmp += "# pair_coeff 3 4  1228.9    0.3372    0.000 # O-Ca, [G1] \n"
+            tmp += "# pair_coeff 3 4  1400.0    0.3500    0.000 # O-Sr, [G1] \n"
+            tmp += "# pair_coeff 3 4   931.7    0.3494    0.000 # O-Ba, [G1] \n"
+            tmp += "#------------------------------------------------------- \n"
+            tmp += "# Memo (trivalent cations, TM3+) (MT3+ on Sn site) \n"
+            tmp += "# pair_coeff 3 4  1715.7    0.3069    0.000 # O-Ti, [G1] \n"
+            tmp += "# pair_coeff 3 4  1790.2    0.3061    0.000 # O-V,  [G1] \n"
+            tmp += "# pair_coeff 3 4  1734.1    0.3010    0.000 # O-Cr, [G1] \n"
+            tmp += "# pair_coeff 3 4  1257.9    0.3214    0.000 # O-Mn, [G1] \n"
+            tmp += "# pair_coeff 3 4  1102.4    0.3299    0.000 # O-Fe, [G1] \n"
+            tmp += "# pair_coeff 3 4  1329.82   0.3087    0.000 # O-Co, [LMO1]\n"
+            tmp += "# pair_coeff 3 4  1195.00   0.3087    0.000 # O-Co, other ref. [23], [L23] \n"
+            tmp += "# pair_coeff 3 4  1279.23   0.2932    0.000 # O-Ni, other ref. [P9] \n"
+            tmp += "\n"
+            tmp += "# pair_coeff 3 4  1625.72   0.3019    0.000 # O-Ga, [LMO1] \n"
+            tmp += "# pair_coeff 3 4  1725.20   0.28971   0.000 # O-Al, [LMO1], [LCO1], [LZO1], [LRO1], [LSO1] \n"
+            tmp += "# pair_coeff 3 4  1114.9    0.3118    0.000 # O-Al, [G1] \n"
+            tmp += "# pair_coeff 3 4  1575.85   0.3211    0.000 # O-Sc, [LMO1], [LCO1], [LZO1], [LRO1], [LSO1] \n"
+            tmp += "# pair_coeff 3 4  1299.4    0.3312    0.000 # O-Sc, [G1] \n"
+            tmp += "# pair_coeff 3 4  1495.65   0.3327    4.33  # O-In, [LMO1], [LCO1], [LZO1], [LRO1], [LSO1] \n"
+            tmp += "# pair_coeff 3 4  1766.40   0.33849  19.43  # O-Y,  [LMO1], [LCO1], [LZO1], [LRO1], [LSO1] \n"
+            tmp += "# pair_coeff 3 4  1345.1    0.3491    0.000 # O-Y,  [G1] \n"
+            tmp += "# pair_coeff 3 4  1885.75   0.3399   20.34  # O-Gd, [LMO1], [LCO1], [LZO1], [LRO1], [LSO1] \n"
+            tmp += "# pair_coeff 3 4  2088.79   0.3460   23.25  # O-La, [LMO1], [LCO1], [LZO1], [LRO1], [LSO1] \n"
+            tmp += "# pair_coeff 3 4  1439.7    0.3651    0.000 # O-La, [G1] \n"
+            tmp += "#------------------------------------------------------- \n"
+            tmp += "# Memo (tetravalent cations, Xx4+) (Xx4+ on Sn site) \n"
+            tmp += "# pair_coeff 3 4  1283.91   0.32052  10.66  # O-Si, [LMO1], [LZO1] \n"
+            tmp += "# pair_coeff 3 4  1497.3996 0.325646 16.00  # O-Ge, [LMO1], [LZO1] \n"
+            tmp += "# pair_coeff 3 4  1035.5    0.3464    0.000 # O-Ge, [G1] \n"
+            tmp += "# pair_coeff 3 4  1414.32   0.3479   13.66  # O-Sn, [LMO1], [LZO1] \n"
+            tmp += "# pair_coeff 3 4   938.7    0.3813    0.000 # O-Sn, [G1] \n"
+            tmp += "# pair_coeff 3 4  5111.7    0.2625    0.000 # O-Ti, [LMO1], [LZO1] \n"
+            tmp += "# pair_coeff 3 4   754.2    0.3879    0.000 # O-Ti, [G1] \n"
+            tmp += "# pair_coeff 3 4   985.869  0.3760    0.000 # O-Zr, [LMO1] \n"
+            tmp += "# pair_coeff 3 4  3087.826  0.2642    0.000 # O-Mn, [LMO1] \n"
+            tmp += "# pair_coeff 3 4  1986.83   0.3511   20.40  # O-Ce, [LMO1], [LZO1] \n"
+            tmp += "# pair_coeff 3 4  1013.6    0.3949    0.000 # O-Ce, [G1] \n"
+            tmp += "# pair_coeff 3 4 13733.40   0.2259    0.49  # O-Ru, [LRO1] \n"
+            tmp += "#------------------------------------------------------- \n"
+            tmp += "# References \n"
+            tmp += "# [G1] G. V. Lewis et al., J. Phys. C: Solid State Phys., 18 (1985) 1149-1161. \n"
+            tmp += "#  Values of A in parentheses are appropriate for cations in a tetrahedral anion environment. \n"
+            tmp += "# [LMO1] N. Kuganathan et al., Energies 2019, 12(7), 1329. (Li2MnO3) \n"
+            tmp += "# [LCO1] A. Kordatos et al., Sci Rep 8, 6754 (2018). (Li2CuO2)    \n"
+            tmp += "# [LZO1] K. A. Rex et al., Energies 2021, 14(13), 3963. (Li2ZnO3) \n"
+            tmp += "# [LRO1] N. Kuganathan et al., Sci Rep 9, 550 (2019).   \n"
+            tmp += "#  pair_coeff 3 3 12420.50 0.2215 29.07 # O-O, Y(e)=-2.96, k(eV A^-2) 31.00 \n"
+            tmp += "# [LSO1] N. Kuganathan et al., Sci Rep 8, 12621 (2018). \n"
+            tmp += "#------------------------------------------------------- \n"
+            tmp += "\n"
+            tmp += "kspace_style pppm 1e-05 \n"
+            tmp += "\n"
+        if self.pottype == "ReaxFF" or self.pottype == "" or self.pottype == "MEAM" or self.pottype == "EAM" or self.pottype == "ADP" or self.pottype == "COMP3" or self.pottype == "AIREBO":
+            tmp += "#------------------------------------------------------------------------------\n"
+            tmp += "#Note: ReaxFF and AIREBO are suitable for molecular calculations. \n"
+            tmp += "# MEAM, EAM, FS, and ADP are suitable for crystal calculations. \n"
+            tmp += "# All potentials are weak in calculations between interfaces and molecules \n"
+            tmp += "# (potentials are often not reproduced well unless parameters are changed with this in mind). \n"
+            tmp += "# ---------- ---------- ---------- ---------- ---------- ---------- ---------- \n"
+            tmp += "#Caution: Although often misunderstood, \n"
+            tmp += "# MEAM, EAM and ADP take into account the concepts of many-body effects and universal potential. \n"
+            tmp += "# FS takes into account many-body effects based on the theory of tight binding method. \n"
+            tmp += "# AIREBO and Tersoff take into account the concepts of universal potential. \n"
+            tmp += "# ---------- ---------- ---------- ---------- ---------- ---------- ---------- \n"
+            tmp += "# It is also good to remember that MEAM etc. can be created using potfit, MPC, etc. \n"
+            tmp += "# ---------- ---------- ---------- ---------- ---------- ---------- ---------- \n"
+            tmp += "#Attension!!!: These potentials basically do not take spin into account, \n"
+            tmp += "# so good results are often not obtained in environments where phase transformation occurs. \n"
+            tmp += "# ---------- ---------- ---------- ---------- ---------- ---------- ---------- \n"
+            tmp += "#Attension!!!: Neural networks (NNs) do not explicitly consider magnetism in their formulas \n"
+            tmp += "# (unless otherwise specified, NNs also do not explicitly consider electric charges in their formulas). \n"
+            tmp += "# Therefore, it must be remembered that NNs cannot deal with external magnetism or voltage. \n"
+            tmp += "# [The latest CHGNet may solve these problems to a large extent. I have high expectations for future developments.] \n"
+            tmp += "# ---------- ---------- ---------- ---------- ---------- ---------- ---------- \n"
+            tmp += "#Note: If you want to apply voltage: ReaxFF, COMP3, DFTB+, DFTBP and ESM-RISM (QE, OpenMX, etc) \n"
+            tmp += "# I think we need to rewrite the charge part a little in DFTBP. \n"
+            tmp += "#------------------------------------------------------------------------------\n"
+        tmp += "\n"
+        #
+        if self.runtype == "tfmc":
+            tmp += "#-------------------- The time-stamped force-bias Monte Carlo (tfMC) algorithm -----------\n"
+            tmp += "fix f1 all tfmc 0.1 ${MC_temp} 12345 com 1 1 1 rot \n"
+            tmp += "run ${MC_Nsteps} \n"
+            tmp += "unfix f1 \n"
+            tmp += "\n"
+            tmp += "#-------------------- \n"
+            tmp += "#Note: An example of a typical use case would be the modelling of chemical vapor deposition (CVD) processes on a surface \n"
+            tmp += "#-------------------- \n"
+            tmp += "\n"
+        #
+        if self.runtype == "mc":
+            tmp += "#-------------------- Monte Carlo swaps  -------------------------------------------------\n"
+            if (mnextAtomTypeId-1) != 1:
+                tmp += "# Memo; "+str(mc_element)+"\n"
+                for atom1 in range(1,mnextAtomTypeId):
+                    for atom2 in range(1,atom1):
+                        tmp += "fix mc"+str(atom1)+str(atom2)+" all atom/swap 1 1 12345 ${MC_temp} ke no types "+str(atom1)+" "+str(atom2)+" \n"
+                tmp += "run ${MC_Nsteps} \n"
+                for atom1 in range(1,mnextAtomTypeId):
+                    for atom2 in range(1,atom1):
+                        tmp += "unfix mc"+str(atom1)+str(atom2)+"\n"
+            else:
+                tmp += "# Note: Do not swap because it is one element. \n"
+            tmp += "\n"
+        #
+        tmp += "#-------------------- Energy Minimization ------------------------------------------------\n"
+        tmp += "# 0 [K], structure optimization \n"
+        tmp += "minimize 1.0e-4 1.0e-6 100 1000 # Normal case \n"
+        tmp += "# minimize 0.0 1.0e-8 1000 100000 # More accurate case \n"
+        #
+        tmp += "\n"
+        tmp += "#-------------------- Settings -----------------------------------------------------------\n"
+        tmp += "reset_timestep 0 \n"
+        tmp += "\n"
+        #
+        if self.dt == 0.25:
+            if self.pottype == "ReaxFF" or self.pottype == "":
+                if float(self.temperature) >= 1251.0:
+                    tmp += "timestep 0.1 # 0.1 [fs], sets the timestep for subsequent simulations \n"
+                    dt = 0.1
+                    Nout = 100
+                else:
+                    tmp += "timestep 0.25 # 0.25 [fs], sets the timestep for subsequent simulations \n"
+                    dt = 0.25
+                    Nout = 100
+            elif self.pottype == "AIREBO":
+                tmp += "timestep 0.0001 # 0.1 [fs], sets the timestep for subsequent simulations \n"
+                dt = 0.0001
+                Nout = 1000
+            else:
+                tmp += "timestep 0.001 # 1.0 [fs], sets the timestep for subsequent simulations \n"
+                dt = 0.001
+                Nout = 1000
+        else:
+            if self.pottype == "ReaxFF" or self.pottype == "":
+                tmp += "timestep "+str(self.dt)+" # [fs] for real unit \n"
+                dt = float(self.dt)
+                Nout = 100
+            else:
+                tmp += "# Note: Convert [fs] to [ps] region. \n"
+                tmp += "timestep "+str(float(self.dt)/1000)+" # [ps] for metal unit = "+str(self.dt)+" [fs] \n"
+                dt = float(self.dt)/1000
+                Nout = 1000
+        tmp += "#------------------------------------------------------------------------------\n"
+        tmp += "#Note: 10 [fs] = about 3335.6 [cm^-1] (This corresponds to C-H, O-H or N-H stretching vibration, etc) \n"
+        tmp += "#Setting dt = 1 [fs] corresponds to dividing the period of these vibrations into 10. \n"
+        tmp += "#For systems consisting of heavy elements, a larger dt can be set by estimating from the reduced mass. \n"
+        tmp += "#However, 1 [fs] is usually selected except for ReaxFF and AIREBO. \n"
+        tmp += "#Theoretically, AIREBO is said to be good at 0.01 [fs], but this is a difficult calculation, \n"
+        tmp += "# so in reality it is calculated at 0.1 [fs]. It's good to remember this.\n"
+        tmp += "# ---------- ---------- ---------- ---------- ---------- ---------- ---------- \n"
+        tmp += "#Reduced mass (RM) table \n"
+        for atom1 in range(1,mnextAtomTypeId):
+            for atom2 in range(1,atom1+1):
+                cm = watomTypes[atom1] * watomTypes[atom2] / (watomTypes[atom1] + watomTypes[atom2])
+                scm = math.sqrt(cm)
+                tmp += "# element "+str(atom1)+":"+str(atom2)+" | RM = "+str(cm)+" | sqrt(RM) = %5.2f \n"%(scm)
+        tmp += "# dt = %f*min(sqrt(RM)) \n"%(dt)
+        tmp += "#------------------------------------------------------------------------------\n"
+        tmp += "\n"
+        tmp += "thermo %d # computes and prints thermodynamic \n"%(Nout)
+        tmp += "thermo_style custom step temp vol press etotal # specifies content of thermodynamic data to be printed in screen \n"
+        #
+        tmp += "\n"
+        if self.show_temp == "yes":
+            tmp += "#------------ calculate temperature per particle ----------------------------- \n"
+            tmp += "variable kB   equal 1.380650e-23 # Boltzman constant [J/K] \n"
+            tmp += "variable eV2J equal 1.602763e-19 # change [eV] to [J] unit \n"
+            tmp += "compute ke all ke/atom           # The kinetic energy [eV] of each atom \n"
+            tmp += "# ---------- ---------- ---------- ---------- ---------- ---------- ---------- \n"
+            tmp += "#Ref: variable temp atom c_ke*${eV2J}/(1.5*${kB}) #### T \n"
+            tmp += "variable tempatom atom c_ke*${eV2J}*(2/3)/${kB} # ke = (1/2)*m*v^2 = (3/2)*kB*T, T = ke*(2/3)/kB \n"
+            #
+            if self.pottype == "ReaxFF" or self.pottype == "" or self.pottype == "COMP3":
+                tmp += "#dump d1 all cfg %d cfg/run_temp.*.cfg mass type xs ys zs id type q vx vy vz fx fy fz v_tempatom \n"%(Nout)
+            else:
+                tmp += "#dump d1 all cfg %d cfg/run_temp.*.cfg mass type xs ys zs id type vx vy vz fx fy fz v_tempatom \n"%(Nout)
+            #
+            tmp += "# ---------- ---------- ---------- ---------- ---------- ---------- ---------- \n"
+            tmp += "fix ave_tempatom all ave/atom 1 %d %d v_tempatom # Average calculation for temperature of each atom \n"%(Nout,Nout)
+            #
+            if self.pottype == "ReaxFF" or self.pottype == "" or self.pottype == "COMP3":
+                tmp += "dump d1 all cfg %d cfg/run_temp.*.cfg mass type xs ys zs id type q vx vy vz fx fy fz f_ave_tempatom \n"%(Nout)
+            else:
+                tmp += "dump d1 all cfg %d cfg/run_temp.*.cfg mass type xs ys zs id type vx vy vz fx fy fz f_ave_tempatom \n"%(Nout)
+            #
+            tmp += "# ---------- ---------- ---------- ---------- ---------- ---------- ---------- \n"
+            tmp += "dump_modify d1 element ${elem} \n"
+            tmp += "# ---------- ---------- ---------- ---------- ---------- ---------- ---------- \n"
+            tmp += "# References \n"
+            tmp += "# [1] M. Li et al., Nanomaterials 2019, 9(3), 347; https://doi.org/10.3390/nano9030347 \n"
+            tmp += "# URL: https://www.mdpi.com/2079-4991/9/3/347 \n"
+            tmp += "# Supplementary Materials: https://www.mdpi.com/2079-4991/9/3/347/s1 \n"
+            tmp += "#-------------------------------------------------------------------------------\n"
+            tmp += "\n"
+        else:
+            tmp += "#---------- output file settings -----------------------------------------------\n"
+            if self.pottype == "ReaxFF" or self.pottype == "" or self.pottype == "COMP3":
+                tmp += "dump d1 all cfg %d cfg/run.*.cfg mass type xs ys zs id type q vx vy vz fx fy fz \n"%(Nout)
+            else:
+                tmp += "dump d1 all cfg %d cfg/run.*.cfg mass type xs ys zs id type vx vy vz fx fy fz \n"%(Nout)
+            tmp += "dump_modify d1 element ${elem} \n"
+            tmp += "#-------------------------------------------------------------------------------\n"
+        #
+        tmp += "\n"
+        tmp += "# sets the velocity of a group of atoms \n"
+        tmp += "velocity all create 77.0 123456 rot yes mom yes dist gaussian \n"
+        tmp += "\n"
+        if self.Efield != 0.0:
+            tmp += "# E-field component values (electric field units) (electric field = volts/Angstrom) \n"
+            tmp += "fix kick all efield 0.0 0.0 $(1.0/lz*v_va) \n"
+            tmp += "#fix top all wall/reflect zhi EDGE # For boundary p p f \n"
+            tmp += "#fix xwalls all wall/reflect xlo EDGE xhi EDGE # For boundary f p p \n"
+            tmp += "\n"
+        #
+        tmp += "#-------------------- Run the simulation -------------------------------------------------\n"
+        if self.runtype == "ann" or self.runtype == "":
+            tmp += "# Annealing Simulation \n"
+            tmp += "\n"
+            tmp += "# Heating and pressure process (>= 4 [ps] (%d steps) recommended) \n"%(4.0*df/dt)
+            tmp += "fix f1 all npt temp ${LT} ${HT} $(100.0*dt) iso ${LP} ${HP} $(1000.0*dt) \n"
+            tmp += "run ${Nsteps} # program is run for Nsteps iterations (Note: dt*${Nsteps}/%d = %6.2f [ps])\n"%(df,dt*float(Nsteps)/df)
+            tmp += "unfix f1 \n"
+            tmp += "\n"
+            tmp += "# Heat retention (>= 16 [ps] (%d steps) recommended) \n"%(16.0*df/dt)
+            tmp += "fix f2 all nvt temp ${HT} ${HT} $(100.0*dt) \n"
+            tmp += "run ${Nsteps} # program is run for Nsteps iterations (Note: dt*${Nsteps}/%d = %6.2f [ps])\n"%(df,dt*float(Nsteps)/df)
+            tmp += "unfix f2 \n"
+            tmp += "\n"
+            tmp += "# Cooling and depressurization process (>= 8 [ps] (%d steps) recommended) \n"%(8.0*df/dt)
+            tmp += "fix f3 all npt temp ${HT} ${LT} $(100.0*dt) iso ${HP} ${LP} $(1000.0*dt) \n"
+            tmp += "run ${Nsteps} # program is run for Nsteps iterations (Note: dt*${Nsteps}/%d = %6.2f [ps])\n"%(df,dt*float(Nsteps)/df)
+            tmp += "unfix f3 \n"
+            tmp += "\n"
+            tmp += "#-------------------------------------------------------------------------------- \n"
+            tmp += "# Note \n"
+            tmp += "# If there are no problems with the calculations above, \n"
+            tmp += "# change the conditions to the ones below and publish at a conference or in a paper. \n"
+            tmp += "# ---------- ---------- ---------- ---------- ---------- ---------- ---------- \n"
+            tmp += "# e.g., Born-Mayer-Huggins (BMH) or Buckingham potentials \n"
+            tmp += "# 1. Two amorphous structures are prepared separately at 4000 K \n"
+            tmp += "# 2. Docking two amorphous structures \n"
+            tmp += "# 3. Structural relaxation at atmospheric pressure (1 bar) \n"
+            tmp += "# 4. Annealing (20 ps simulation at 1 bar, 1000 K using NPT method) \n"
+            tmp += "# 5. Cool from 1000 K to 300 K over 60 ps \n"
+            tmp += "# 6. Hold 20 ps at 300 K \n"
+            tmp += "# ---------- ---------- ---------- ---------- ---------- ---------- ---------- \n"
+            tmp += "# The charge density profile, oxygen density difference, cation depth profile, \n"
+            tmp += "# mixing energy and enthalpy obtained in this way can explain many experiments well, \n"
+            tmp += "# so methods such as BMH are being reconsidered. \n"
+            tmp += "#-------------------------------------------------------------------------------- \n"
+            tmp += "\n"
+        #
+        if self.runtype == "msd":
+            tmp += "# MSD (Mean Square Displacement) Simulation \n"
+            tmp += "# Memo; "+str(mc_element)+"\n"
+            tmp += "# ----- \n"
+            for natom in range(1,mnextAtomTypeId):
+                tmp += "group "+satomTypes[natom]+" type "+str(natom)+" \n"
+                tmp += "compute "+satomTypes[natom]+"msd "+satomTypes[natom]+" msd \n"
+                tmp += "fix f"+str(natom)+" all ave/time 1 1 5 c_"+satomTypes[natom]+"msd[*] file out_"+satomTypes[natom]+"_msd.txt \n"
+                tmp += "# ----- \n"
+            tmp += "\n"
+            tmp += "fix f"+str(natom+1)+" all nvt temp ${HT} ${HT} $(100.0*dt) \n"
+            tmp += "run ${Nsteps} # program is run for Nsteps iterations (Note: dt*${Nsteps}/%d = %6.2f [ps])\n"%(df,dt*float(Nsteps)/df)
+            tmp += "unfix f"+str(natom+1)+" \n"
+            tmp += "\n"
+            #
+            tmp += "#-------------------------------------------------------------------------------- \n"
+            tmp += "# Note \n"
+            tmp += "# We can derive the Li and Na diffusion coefficients using \n"
+            tmp += "# the MSD data and then convert them to ionic conductivities using \n"
+            tmp += "# the Nernst-Einstein equation. \n"
+            tmp += "# MSD = 6*D*t \n"
+            tmp += "# where t is the simulation time, D is diffusion coeffcients. \n"
+            tmp += "# ---------- ---------- ---------- ---------- ---------- ----------\n"
+            tmp += "# This is related to the inclination when \n"
+            tmp += "# the vertical axis (Y-axis) is MSD (total^2 = dx^2 + dy^2 + dz^2) \n"
+            tmp += "# and the horizontal axis (x-axis) is step*dt. \n"
+            tmp += "# ---------- ---------- ---------- ---------- ---------- ----------\n"
+            tmp += "# If you want near-steady-state results, you need to run \n"
+            tmp += "# the simulation for a long time until it is sufficiently stable. \n"
+            tmp += "# ---------- ---------- ---------- ---------- ---------- ----------\n"
+            tmp += "# D = MSD/(6*t) = MSD (total)/(6*step*dt) \n"
+            tmp += "# D = [Angstrom^2/ps] => (10^-10)^2/10^-12 = 10^-8 [m^2/s] \n"
+            tmp += "# ---------- ---------- ---------- ---------- ---------- ----------\n"
+            tmp += "# The diffusion coefficient thus obtained at the set temperature \n"
+            tmp += "# is used in the Phase field (PF) method. \n"
+            tmp += "#-------------------------------------------------------------------------------- \n"
+            tmp += "\n"
+        #
+        if self.runtype == "ten" or self.runtype == "com":
+            tmp += "dt = ${dt_ex}"
+            tmp += "# stress-strain Simulation \n"
+            tmp += "compute 1 all stress/atom NULL  # computes the symmetric per-atom stress tensor for each atom in a group. \n"
+            tmp += "compute 2 all temp              # computes the temp of a group of atoms \n"
+            tmp += "compute 3 all reduce sum c_1[2] # reduces vector quantities of all stress tensors in y-direction and adds all the quantities to a single \n"
+            tmp += "compute kea all ke/atom         # This is related to temperature \n"
+            tmp += "\n"
+            tmp += "variable    tmp equal ly \n"
+            tmp += "variable     lo equal ${tmp} \n"
+            tmp += "variable strain equal (ly-v_lo)/v_lo \n"
+            tmp += "\n"
+            tmp += "#for units metal, pressure is in 1 [bars] = 100 [kPa] = 0.1 [MPa] = 1x10^-4 [GPa] => p, is in GPa \n"
+            tmp += "variable     p2 equal -pyy/10000         # assign a value to the variable name strain \n"
+            tmp += "\n"
+            tmp += "variable stress     equal c_3/vol        # assigns a value to the variable name stress \n"
+            tmp += "variable stress_GPa equal v_stress/10000 # converts the stress calculated to GPa \n"
+            tmp += "variable stress_MPa equal v_stress_GPa*1000 # Note: 1 GPa = 1000 MPa \n"
+            tmp += "\n"
+            tmp += "thermo_style custom step temp press vol etotal c_2 v_strain v_stress v_stress_GPa v_stress_MPa v_p2 \n"
+            tmp += "\n"
+            tmp += "#---------- output file settings -------------------\n"
+            tmp += "fix fo1 all ave/time 1 3 3 c_2 v_strain v_stress v_stress_GPa v_p2 file stress_vs_strain.txt \n"
+            tmp += "#---------------------------------------------------\n"
+            tmp += "undump d1 \n"
+            tmp += "dump        d2 all cfg %d cfg/run.*.cfg mass type xs ys zs id type vx vy vz fx fy fz c_kea \n"%(Nout)
+            tmp += "dump_modify d2 element ${elem} \n"
+            tmp += "#---------------------------------------------------\n"
+            tmp += "\n"
+            #
+            if self.runtype == "ten":
+                tmp += "# Tensile Simulation \n"
+            elif self.runtype == "com":
+                tmp += "# Compression Simulation \n"
+            else:
+                tmp += "# Tensile or Compression Simulation \n"
+            tmp += "#-------------------- Run the simulation -------------------------------------------------\n"
+            tmp += "# strain rate of %6.3f [1/dt] is applied in y direction \n"%(es_rate)
+            tmp += "fix d1 all deform 1 y erate ${es_rate} \n"
+            tmp += "\n"
+            tmp += "# all atoms rescaled to new positions while temp and pressure is conserved \n"
+            tmp += "fix 2 all npt temp ${HT} ${HT} $(dt*v_Nsteps) x 0 0 $(dt*v_Nsteps) z 0 0 $(dt*v_Nsteps) dilate all # Adiabatic conditions \n"
+            tmp += "\n"
+            tmp += "# Resets the temp of atoms to %7.2f K by rescaling velocities after every 10 steps \n"%float(self.temperature)
+            tmp += "fix 3 all temp/rescale 10 ${HT} ${HT} 0.05 1.0 \n"
+            tmp += "\n"
+            tmp += "# number of iterations is given so as to give 40% strain to the material \n"
+            tmp += "run ${Nsteps} # program is run for Nsteps iterations (Note: dt_es*${Nsteps}/%d = %6.2f [ps])\n"%(df,dt*float(Nsteps)/df)
+            tmp += "\n"
+            #
+            tmp += "#-------------------------------------------------------------------------------- \n"
+            tmp += "# The calculation conditions for this time are as follows. \n"
+            tmp += "#-------------------------------------------------------------------------------- \n"
+            tmp += "variable strain_rate_percent equal \"(v_strain)/(v_dt_ps * v_Nsteps)*100\" # [%/ps] \n"
+            tmp += "variable strain_rate equal \"(v_strain)/(v_dt_ps * v_Nsteps)\" # [1/ps] \n"
+            tmp += "print \"strain_rate: ${strain_rate_percent} [%/ps] at setting temperature ${HT} [K]\" \n"
+            tmp += "print \"strain rate: ${strain_rate} x 10^12 [1/s] at setting temperature ${HT} [K]\" \n"
+            tmp += "#-------------------------------------------------------------------------------- \n"
+            tmp += "\n"
+            tmp += "#-------------------------------------------------------------------------------- \n"
+            tmp += "# Note \n"
+            tmp += "# compute        peratom all stress/atom NULL \n"
+            tmp += "# compute        p all reduce sum c_peratom[1] c_peratom[2] c_peratom[3] \n"
+            tmp += "# variable       press equal -(c_p[1]+c_p[2]+c_p[3])/(3*vol) \n"
+            tmp += "# # pxx = -c_p[1]/(3*vol), pyy = -c_p[2]/(3*vol), pzz = -c_p[3]/(3*vol) \n"
+            tmp += "# thermo_style   custom step temp etotal press v_press \n"
+            tmp += "# metal unit: press = bar = 0.1 MPa, length = Angstrom = 1e-10 m \n"
+            tmp += "#-------------------------------------------------------------------------------- \n"
+            tmp += "\n"
+        #
+        if self.runtype == "the" or self.runtype == "vis":
+            tmp += "#-------------------- thermal conductivity or viscosity calculation settings -----\n"
+            tmp += "variable  T equal ${HT} \n"
+            tmp += "variable  V equal vol \n"
+            tmp += "variable dt equal %6.4    # [fs] \n"%(dt)
+            tmp += "variable  p equal 400     # correlation length \n"
+            tmp += "variable  s equal 5       # sample interval \n"
+            tmp += "variable  d equal $p*$s   # dump interval \n"
+            tmp += "\n"
+            tmp += "# convert from LAMMPS real units to SI \n"
+            if self.pottype == "ReaxFF" or self.pottype == "":
+                tmp += "# real units case \n"
+                tmp += "variable kB equal 1.3806504e-23    # [J/K] Boltzmann \n"
+                tmp += "variable atm2Pa equal 101325.0 # atm to Pa (pressure) \n"
+                tmp += "variable A2m equal 1.0e-10  # Angstrom to metol (length) \n"
+                tmp += "variable fs2s equal 1.0e-15 # fs to s (time) \n"
+                tmp += "variable convert equal ${atm2Pa}*${atm2Pa}*${fs2s}*${A2m}*${A2m}*${A2m} \n"
+            else:
+                tmp += "# metal units case \n"
+                tmp += "variable kB equal 1.3806504e-23    # [J/K] Boltzmann \n"
+                tmp += "variable bar2Pa equal 100000.0 # bar to Pa (pressure) \n"
+                tmp += "variable A2m equal 1.0e-10  # Angstrom to metol (length) \n"
+                tmp += "variable ps2s equal 1.0e-12 # ps to s (time) \n"
+                tmp += "variable convert equal ${bar2Pa}*${bar2Pa}*${ps2s}*${A2m}*${A2m}*${A2m} \n"
+        #
+        if self.runtype == "the":
+            tmp += "#-------------------- thermal conductivity calculation -----------------------------------\n"
+            tmp += "compute      myKE all ke/atom \n"
+            tmp += "compute      myPE all pe/atom \n"
+            tmp += "compute      myStress all stress/atom NULL virial \n"
+            tmp += "compute      flux all heat/flux myKE myPE myStress \n"
+            tmp += "variable     Jx equal c_flux[1]/vol \n"
+            tmp += "variable     Jy equal c_flux[2]/vol \n"
+            tmp += "variable     Jz equal c_flux[3]/vol \n"
+            tmp += "fix          JJ all ave/correlate $s $p $d & \n"
+            tmp += "             c_flux[1] c_flux[2] c_flux[3] type auto file J0Jt.dat ave running \n"
+            tmp += "variable     scale equal ${convert}/${kB}/$T/$T/$V*$s*${dt} \n"
+            tmp += "variable     k11 equal trap(f_JJ[3])*${scale} \n"
+            tmp += "variable     k22 equal trap(f_JJ[4])*${scale} \n"
+            tmp += "variable     k33 equal trap(f_JJ[5])*${scale} \n"
+            tmp += "thermo_style custom step temp v_Jx v_Jy v_Jz v_k11 v_k22 v_k33 \n"
+            tmp += "run          100000 \n"
+            tmp += "variable     kappa equal (v_k11+v_k22+v_k33)/3.0 \n"
+            tmp += "variable     ndens equal count(all)/vol \n"
+            tmp += "print        \"average conductivity: ${kappa} [W/mK] @ $T K, ${ndens} /A^3\" \n"
+            tmp += "\n"
+        if self.runtype == "vis":
+            tmp += "#-------------------- viscosity calculation ----------------------------------------------\n"
+            tmp += "variable     pxy equal pxy \n"
+            tmp += "variable     pxz equal pxz \n"
+            tmp += "variable     pyz equal pyz \n"
+            tmp += "fix          SS all ave/correlate $s $p $d & \n"
+            tmp += "             v_pxy v_pxz v_pyz type auto file S0St.dat ave running \n"
+            tmp += "variable     scale equal ${convert}/(${kB}*$T)*$V*$s*${dt} \n"
+            tmp += "variable     v11 equal trap(f_SS[3])*${scale} \n"
+            tmp += "variable     v22 equal trap(f_SS[4])*${scale} \n"
+            tmp += "variable     v33 equal trap(f_SS[5])*${scale} \n"
+            tmp += "thermo_style custom step temp press v_pxy v_pxz v_pyz v_v11 v_v22 v_v33 \n"
+            tmp += "run          100000 \n"
+            tmp += "variable     v equal (v_v11+v_v22+v_v33)/3.0 \n"
+            tmp += "variable     ndens equal count(all)/vol \n"
+            tmp += "print        \"average viscosity: $v [Pa.s] @ $T K, ${ndens} /A^3\" \n"
+            tmp += "\n"
+        #
+        if self.rdf == "yes":
+            tmp += "#-------------------- Output data (RDF)---------------------------------------------------\n"
+            tmp += "# calculates the radial distribution function (RDF) and output file \n"
+            tmp += "# These are templates for input files. Please rewrite it to suit your needs. \n"
+            tmp += "\n"
+            tmp += "# RDF settings \n"
+            tmp += "compute 11 all rdf 100 \n"
+            tmp += "fix r1 all ave/time 100 1 100 c_11[*] file rdf_strain.rdf mode vector \n"
+            tmp += "\n"
+            tmp += "# Sets NVT and Run NVT + RDF calculations \n"
+            tmp += "fix f2 all nvt temp ${HT} ${HT} $(100.0*dt) \n"
+            tmp += "run ${Nsteps} # program is run for Nsteps iterations (Note: dt*${Nsteps}/%d = %6.2f [ps])\n"%(df,dt*float(Nsteps)/df)
+            tmp += "unfix f2 \n"
+            tmp += "\n"
+        #
+        tmp += "#-------------------- Output data file ---------------------------------------------------\n"
+        tmp += "write_data output.dat \n"
+        tmp += "\n"
+        tmp += "#-------------------- End ----------------------------------------------------------------\n"
+        #
+        return tmp
 
 ################################################################################################
 class SiestaFile(GeometryOutputFile):
